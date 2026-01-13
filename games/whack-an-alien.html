@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Destroy Aliens, Not Aunties - Aliens vs Malaysians</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'fredoka': ['Fredoka', 'sans-serif'] },
+                    colors: { 'sambal': '#FF5252', 'durian': '#FFD600', 'pandan': '#00E676' }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes pop {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        .animate-pop {
+            animation: pop 100s ease-out;
+        }
+
+        .animate-shake {
+            animation: shake 1s ease-out;
+        }
+    </style>
+</head>
+
+<body
+    class="font-fredoka bg-gradient-to-b from-pink-200 via-orange-100 to-yellow-100 min-h-screen overflow-hidden touch-none select-none">
+
+    <!-- HUD -->
+    <div id="hud" class="hidden fixed top-4 left-0 right-0 z-50 px-4 flex justify-between pointer-events-none">
+        <!-- Spacer for left side to avoid overlap with back button -->
+        <div class="w-32"></div>
+
+        <div class="flex gap-4">
+            <div
+                class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg pointer-events-auto">
+                SCORE: <span id="score" class="text-pandan">0</span>
+            </div>
+            <div
+                class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg text-sambal pointer-events-auto">
+                <span id="timer">60</span>s
+            </div>
+        </div>
+    </div>
+
+    <!-- Persistent Back Button -->
+    <button onclick="window.location.href='/'"
+        class="fixed top-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
+        <span class="text-2xl">🏠</span> BACK TO MENU
+    </button>
+
+    <!-- Game Area -->
+    <div id="gameArea" class="w-full h-screen flex flex-wrap items-center justify-center gap-4 p-8 pt-20">
+        <!-- Holes will be generated here -->
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen"
+        class="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-pandan drop-shadow-[0_4px_0_#000] mb-4">
+            DESTROY ALIENS,<br>NOT AUNTIES!
+        </h1>
+        <p class="text-white text-lg mb-2">Tap the <span class="text-pandan">GREEN ALIENS</span> to score!</p>
+        <p class="text-sambal text-lg mb-6">⚠️ DON'T hit the Aunties! (-5 points)</p>
+        <button onclick="startGame()"
+            class="bg-durian text-black font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+            START MISSION
+        </button>
+    </div>
+
+    <!-- End Screen -->
+    <div id="endScreen"
+        class="hidden fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000] mb-4">
+            TIME'S UP!
+        </h1>
+        <p class="text-white text-xl mb-2">Final Score:</p>
+        <div id="finalScore" class="text-6xl font-bold text-pandan drop-shadow-[0_4px_0_#000] mb-6">0</div>
+        <button onclick="startGame()"
+            class="bg-pandan text-black font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+            PLAY AGAIN
+        </button>
+        <button onclick="window.location.href='/'"
+            class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
+            BACK TO MENU
+        </button>
+    </div>
+
+    <!-- Hit Effect Overlay -->
+    <div id="hitEffect" class="hidden fixed inset-0 pointer-events-none z-[200] flex items-center justify-center">
+        <span class="text-6xl font-bold drop-shadow-[0_4px_0_#000]"></span>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const scoreDisplay = document.getElementById('score');
+        const timerDisplay = document.getElementById('timer');
+        const hitEffect = document.getElementById('hitEffect');
+
+        let score = 0;
+        let timeUp = false;
+        let gameTimer = null;
+        let holes = [];
+
+        // Create holes
+        function createHoles() {
+            gameArea.innerHTML = '';
+            holes = [];
+            const numHoles = window.innerWidth < 768 ? 6 : 9;
+
+            for (let i = 0; i < numHoles; i++) {
+                const hole = document.createElement('div');
+                hole.className = 'relative w-28 h-28 md:w-36 md:h-36';
+                hole.innerHTML = `
+                    <div class="absolute bottom-0 w-full h-12 bg-amber-800 rounded-t-full border-4 border-black"></div>
+                    <div class="character absolute bottom-8 left-1/2 -translate-x-1/2 w-16 h-20 md:w-20 md:h-24 opacity-0 transition-all duration-100 cursor-pointer" data-index="${i}">
+                        <div class="face w-full h-full rounded-full flex items-center justify-center text-4xl md:text-5xl"></div>
+                    </div>
+                `;
+                gameArea.appendChild(hole);
+
+                const charDiv = hole.querySelector('.character');
+                charDiv.addEventListener('click', () => whack(i));
+                charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); whack(i); });
+
+                holes.push({
+                    element: hole,
+                    charDiv: charDiv,
+                    faceDiv: charDiv.querySelector('.face'),
+                    isUp: false,
+                    type: null
+                });
+            }
+        }
+
+        function peep() {
+            if (timeUp) return;
+
+            const idx = Math.floor(Math.random() * holes.length);
+            const hole = holes[idx];
+
+            if (hole.isUp) {
+                setTimeout(peep, 100);
+                return;
+            }
+
+            // 70% alien, 30% aunty
+            const isAlien = Math.random() > 0.3;
+            hole.type = isAlien ? 'alien' : 'aunty';
+
+            if (isAlien) {
+                hole.faceDiv.textContent = '👽';
+                hole.faceDiv.className = 'face w-full h-full rounded-full flex items-center justify-center text-4xl md:text-5xl bg-pandan';
+            } else {
+                hole.faceDiv.textContent = '👵';
+                hole.faceDiv.className = 'face w-full h-full rounded-full flex items-center justify-center text-4xl md:text-5xl bg-pink-300';
+            }
+
+            hole.charDiv.classList.remove('opacity-0');
+            hole.charDiv.classList.add('translate-y-[-20px]');
+            hole.isUp = true;
+
+            const upTime = 1200 + Math.random() * 500;
+            setTimeout(() => {
+                if (hole.isUp) {
+                    hole.charDiv.classList.add('opacity-0');
+                    hole.charDiv.classList.remove('translate-y-[-20px]');
+                    hole.isUp = false;
+                }
+            }, upTime);
+
+            const nextPeep = 900 + Math.random() * 500;
+            setTimeout(peep, nextPeep);
+        }
+
+        function whack(index) {
+            const hole = holes[index];
+            if (!hole.isUp) return;
+
+            if (hole.type === 'alien') {
+                score++;
+                scoreDisplay.textContent = score;
+                showHitEffect('BAM!', 'text-durian');
+                hole.charDiv.classList.add('animate-pop');
+            } else {
+                score = Math.max(0, score - 5);
+                scoreDisplay.textContent = score;
+                showHitEffect('OI!!!', 'text-sambal');
+                hole.charDiv.classList.add('animate-shake');
+            }
+
+            hole.charDiv.classList.add('opacity-0');
+            hole.charDiv.classList.remove('translate-y-[-20px]');
+            hole.isUp = false;
+
+            setTimeout(() => {
+                hole.charDiv.classList.remove('animate-pop', 'animate-shake');
+            }, 300);
+        }
+
+        function showHitEffect(text, colorClass) {
+            const span = hitEffect.querySelector('span');
+            span.textContent = text;
+            span.className = `text-6xl font-bold drop-shadow-[0_4px_0_#000] ${colorClass}`;
+            hitEffect.classList.remove('hidden');
+            setTimeout(() => hitEffect.classList.add('hidden'), 300);
+        }
+
+        function startGame() {
+            score = 0;
+            timeUp = false;
+            scoreDisplay.textContent = 0;
+
+            let timeLeft = 60;
+            timerDisplay.textContent = timeLeft;
+
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('endScreen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+
+            createHoles();
+            peep();
+
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(gameTimer);
+                    timeUp = true;
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('endScreen').classList.remove('hidden');
+        }
+
+        createHoles();
+    </script>
+</body>
+
+</html>

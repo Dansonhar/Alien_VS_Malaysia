@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Traffic Jam vs UFO - Aliens vs Malaysians</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'fredoka': ['Fredoka', 'sans-serif'] },
+                    colors: { 'sambal': '#FF5252', 'durian': '#FFD600', 'pandan': '#00E676' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="font-fredoka bg-gray-800 min-h-screen overflow-hidden touch-none select-none">
+
+    <!-- HUD -->
+    <div id="hud" class="hidden fixed top-4 left-4 z-50 flex gap-4">
+        <div class="bg-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-black">
+            Kancil: <span id="kancilCount" class="text-sambal">5</span>
+        </div>
+        <div class="bg-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-black">
+            Bus: <span id="busCount" class="text-blue-600">2</span>
+        </div>
+    </div>
+    <div id="waveInfo"
+        class="hidden fixed top-4 right-4 z-50 bg-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-black">
+        Wave: <span id="wave" class="text-purple-600">1</span>
+    </div>
+
+    <canvas id="gameCanvas" class="block w-full h-screen"></canvas>
+
+    <!-- Controls -->
+    <div id="controls" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 flex gap-4 z-50">
+        <button id="btnKancil"
+            class="bg-red-500 text-white p-4 rounded-full border-4 border-white shadow-lg scale-100 hover:scale-110 transition-transform ring-4 ring-transparent focus:ring-yellow-400">
+            🚗 Kancil
+        </button>
+        <button id="btnBus"
+            class="bg-blue-600 text-white p-4 rounded-full border-4 border-white shadow-lg scale-100 hover:scale-110 transition-transform ring-4 ring-transparent focus:ring-yellow-400">
+            🚌 Bus
+        </button>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen"
+        class="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-sambal drop-shadow-[0_4px_0_#000] mb-4">
+            🚗 TRAFFIC JAM VS UFO
+        </h1>
+        <p class="text-white text-xl mb-8">Block the UFOs with Malaysian traffic!<br>Don't let them reach KLCC!</p>
+        <button onclick="startGame()"
+            class="bg-yellow-400 text-black font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#F57F17] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#F57F17] transition-all">
+            JAM THEM!
+        </button>
+    </div>
+
+    <!-- End Screen -->
+    <div id="endScreen"
+        class="hidden fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 id="endTitle" class="text-4xl md:text-5xl font-bold text-white drop-shadow-[0_4px_0_#000] mb-4">
+            GAME OVER
+        </h1>
+        <p class="text-white text-2xl mb-8">UFOs stopped:</p>
+        <div id="finalScore" class="text-7xl font-bold text-pandan drop-shadow-[0_4px_0_#000] mb-8">0</div>
+        <button onclick="startGame()"
+            class="bg-pandan text-white font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all">
+            RETRY
+        </button>
+        <button onclick="window.location.href='/'"
+            class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
+            BACK TO MENU
+        </button>
+    </div>
+
+    <button onclick="window.location.href='/'"
+        class="fixed top-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
+        <span class="text-2xl">🏠</span> BACK TO MENU
+    </button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            lanes = [
+                { y: height * 0.3, speed: 2 },
+                { y: height * 0.5, speed: 3 },
+                { y: height * 0.7, speed: 1.5 }
+            ];
+        }
+        window.addEventListener('resize', resize);
+
+        let gameRunning = false;
+        let score = 0;
+        let wave = 1;
+        let kancilCount = 5;
+        let busCount = 2;
+        let selectedVehicle = 'kancil'; // 'kancil' or 'bus'
+        let vehicles = [];
+        let ufos = [];
+        let lanes = [];
+        let explosionParticles = [];
+
+        resize();
+
+        class Vehicle {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.width = type === 'kancil' ? 60 : 120;
+                this.height = 40;
+                this.health = type === 'kancil' ? 1 : 3;
+            }
+            draw() {
+                ctx.save(); ctx.translate(this.x, this.y);
+                ctx.fillStyle = this.type === 'kancil' ? '#FF5252' : '#2979FF';
+
+                // Body
+                ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+                // Windows
+                ctx.fillStyle = '#81D4FA';
+                ctx.fillRect(-this.width / 2 + 5, -this.height / 2 + 5, this.width - 10, this.height / 2);
+                // Wheels
+                ctx.fillStyle = '#000';
+                ctx.beginPath(); ctx.arc(-this.width / 3, this.height / 2, 8, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(this.width / 3, this.height / 2, 8, 0, Math.PI * 2); ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class UFO {
+            constructor(laneIndex) {
+                this.lane = laneIndex;
+                this.y = lanes[laneIndex].y;
+                this.x = width + 50;
+                this.speed = lanes[laneIndex].speed + (wave * 0.2);
+                this.size = 50;
+                this.health = 100;
+            }
+            update() {
+                this.x -= this.speed;
+            }
+            draw() {
+                ctx.save(); ctx.translate(this.x, this.y);
+                // Dome
+                ctx.fillStyle = '#76FF03';
+                ctx.beginPath(); ctx.arc(0, -10, 20, Math.PI, 0); ctx.fill();
+                // Saucer
+                ctx.fillStyle = '#424242';
+                ctx.beginPath(); ctx.ellipse(0, 0, 30, 10, 0, 0, Math.PI * 2); ctx.fill();
+                // Lights
+                ctx.fillStyle = `hsl(${Date.now() / 5 % 360}, 100%, 50%)`;
+                ctx.beginPath(); ctx.arc(-20, 0, 3, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(0, 5, 3, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(20, 0, 3, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x; this.y = y;
+                this.vx = (Math.random() - 0.5) * 10;
+                this.vy = (Math.random() - 0.5) * 10;
+                this.life = 1;
+                this.color = color;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                this.life -= 0.05;
+            }
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        function createExplosion(x, y) {
+            for (let i = 0; i < 15; i++) explosionParticles.push(new Particle(x, y, '#FFC107'));
+        }
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            wave = 1;
+            kancilCount = 5;
+            busCount = 2;
+            vehicles = [];
+            ufos = [];
+            explosionParticles = [];
+
+            updateHUD();
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('endScreen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('controls').classList.remove('hidden');
+            document.getElementById('waveInfo').classList.remove('hidden');
+
+            loop();
+            spawnLoop();
+        }
+
+        function spawnLoop() {
+            if (!gameRunning) return;
+            const lane = Math.floor(Math.random() * 3);
+            ufos.push(new UFO(lane));
+            setTimeout(spawnLoop, Math.max(1000, 3000 - (wave * 200)));
+        }
+
+        function updateHUD() {
+            document.getElementById('kancilCount').textContent = kancilCount;
+            document.getElementById('busCount').textContent = busCount;
+            document.getElementById('wave').textContent = wave;
+            document.getElementById('finalScore').textContent = score;
+
+            // Update button states
+            document.getElementById('btnKancil').style.opacity = kancilCount > 0 ? 1 : 0.5;
+            document.getElementById('btnBus').style.opacity = busCount > 0 ? 1 : 0.5;
+
+            // Highlight selected
+            document.getElementById('btnKancil').classList.toggle('ring-yellow-400', selectedVehicle === 'kancil');
+            document.getElementById('btnBus').classList.toggle('ring-yellow-400', selectedVehicle === 'bus');
+        }
+
+        function endGame(victory) {
+            gameRunning = false;
+            document.getElementById('endTitle').textContent = victory ? "VICTORY!" : "DEFEAT!";
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('controls').classList.add('hidden');
+            document.getElementById('waveInfo').classList.add('hidden');
+            document.getElementById('endScreen').classList.remove('hidden');
+        }
+
+        document.getElementById('btnKancil').addEventListener('click', () => { selectedVehicle = 'kancil'; updateHUD(); });
+        document.getElementById('btnBus').addEventListener('click', () => { selectedVehicle = 'bus'; updateHUD(); });
+
+        canvas.addEventListener('mousedown', (e) => placeVehicle(e.clientY));
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); placeVehicle(e.touches[0].clientY); });
+
+        function placeVehicle(y) {
+            if (!gameRunning) return;
+            // Find closest lane
+            let closestLane = -1;
+            let minDiff = 1000;
+
+            lanes.forEach((l, i) => {
+                let diff = Math.abs(y - l.y);
+                if (diff < minDiff && diff < 80) { // Tolerance
+                    minDiff = diff;
+                    closestLane = i;
+                }
+            });
+
+            if (closestLane !== -1) {
+                if (selectedVehicle === 'kancil' && kancilCount > 0) {
+                    vehicles.push(new Vehicle(100, lanes[closestLane].y, 'kancil'));
+                    kancilCount--;
+                } else if (selectedVehicle === 'bus' && busCount > 0) {
+                    vehicles.push(new Vehicle(100, lanes[closestLane].y, 'bus'));
+                    busCount--;
+                }
+                updateHUD();
+            }
+        }
+
+        function loop() {
+            if (!gameRunning) return;
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw Road
+            ctx.fillStyle = '#424242';
+            lanes.forEach(l => {
+                ctx.fillRect(0, l.y - 40, width, 80);
+                if (l !== lanes[lanes.length - 1]) {
+                    ctx.beginPath();
+                    ctx.setLineDash([20, 20]);
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 4;
+                    ctx.moveTo(0, l.y + 40);
+                    ctx.lineTo(width, l.y + 40);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            });
+
+            vehicles.forEach(v => v.draw());
+
+            for (let i = ufos.length - 1; i >= 0; i--) {
+                let u = ufos[i];
+                u.update();
+                u.draw();
+
+                // Collision
+                let blocked = false;
+                for (let j = vehicles.length - 1; j >= 0; j--) {
+                    let v = vehicles[j];
+                    if (Math.abs(u.y - v.y) < 10 && Math.abs(u.x - v.x) < (u.size + v.width / 2)) {
+                        // Crash
+                        createExplosion(u.x, u.y);
+                        u.health = 0;
+                        v.health--;
+                        if (v.health <= 0) vehicles.splice(j, 1);
+                        blocked = true;
+                        break;
+                    }
+                }
+
+                if (blocked) {
+                    ufos.splice(i, 1);
+                    score++;
+                    updateHUD();
+                } else if (u.x < 0) {
+                    endGame(false);
+                    return;
+                }
+            }
+
+            // Replenish Logic (every 10 score)
+            if (score > 0 && score % 5 === 0 && score > (wave * 5)) {
+                wave++;
+                kancilCount += 2;
+                busCount += 1;
+                updateHUD();
+            }
+
+            explosionParticles.forEach((p, i) => {
+                p.update(); p.draw();
+                if (p.life <= 0) explosionParticles.splice(i, 1);
+            });
+
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>UFO Basketball - Aliens vs Malaysians</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'fredoka': ['Fredoka', 'sans-serif'] },
+                    colors: { 'sambal': '#FF5252', 'durian': '#FFD600', 'pandan': '#00E676' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="font-fredoka bg-gradient-to-b from-[#1a1a2e] via-[#16213e] to-[#0f3460] overflow-hidden touch-none select-none">
+
+    <!-- HUD -->
+    <div id="hud" class="hidden fixed top-4 left-4 z-50 text-white text-2xl font-bold drop-shadow-md">
+        Score: <span id="score" class="text-pandan">0</span>
+    </div>
+    <div id="timer" class="hidden fixed top-4 right-4 z-50 text-durian text-2xl font-bold drop-shadow-md">
+        60
+    </div>
+
+    <canvas id="gameCanvas" class="block w-full h-screen"></canvas>
+
+    <!-- Start Screen -->
+    <div id="startScreen"
+        class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-teal-400 drop-shadow-[0_0_20px_#00BFA5] mb-4">
+            🛸 UFO BASKETBALL
+        </h1>
+        <p class="text-white text-lg mb-8">Throw balls into the alien's weird hoops!</p>
+        <button id="startBtn"
+            class="bg-rose-500 text-white font-bold text-xl px-8 py-4 rounded-full shadow-[0_6px_0_#b8324a] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_3px_0_#b8324a] transition-all">
+            TAP TO START
+        </button>
+    </div>
+
+    <!-- End Screen -->
+    <div id="endScreen"
+        class="hidden fixed inset-0 bg-black/80 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-teal-400 mb-4">GAME OVER!</h1>
+        <p class="text-white text-xl">Balls scored:</p>
+        <div id="finalScore" class="text-6xl font-bold text-teal-400 drop-shadow-[0_0_20px_#00BFA5] my-4">0</div>
+        <button id="restartBtn"
+            class="bg-rose-500 text-white font-bold text-xl px-8 py-4 rounded-full shadow-[0_6px_0_#b8324a] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_3px_0_#b8324a] transition-all">
+            PLAY AGAIN
+        </button>
+        <button onclick="window.location.href='/'"
+            class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
+            BACK TO MENU
+        </button>
+    </div>
+
+    <button onclick="window.location.href='/'"
+        class="fixed top-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
+        <span class="text-2xl">🏠</span> BACK TO MENU
+    </button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        let score = 0;
+        let timeLeft = 60;
+        let gameRunning = false;
+        let timerInterval = null;
+        let ball = null;
+        let ufos = [];
+        let stars = [];
+        let effects = [];
+
+        const ballSpawn = () => ({ x: width / 2, y: height - 80 });
+
+        for (let i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * 2000,
+                y: Math.random() * 2000,
+                size: Math.random() * 2 + 0.5,
+                twinkle: Math.random() * Math.PI * 2
+            });
+        }
+
+        class UFO {
+            constructor(x, y, size) {
+                this.baseX = x;
+                this.baseY = y;
+                this.x = x;
+                this.y = y;
+                this.size = size;
+                this.beamWidth = size * 0.6;
+                this.beamHeight = size * 1.5;
+                this.moveOffset = Math.random() * Math.PI * 2;
+                this.moveSpeed = 0.5 + Math.random() * 0.5;
+                this.moveRange = 50 + Math.random() * 50;
+                this.alienHappy = false;
+                this.hue = Math.floor(Math.random() * 360);
+            }
+            draw() {
+                this.x = this.baseX + Math.sin(Date.now() / 1000 * this.moveSpeed + this.moveOffset) * this.moveRange;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                const beamGradient = ctx.createLinearGradient(0, 0, 0, this.beamHeight);
+                beamGradient.addColorStop(0, `hsla(${this.hue}, 100%, 70%, 0.8)`);
+                beamGradient.addColorStop(1, `hsla(${this.hue}, 100%, 70%, 0)`);
+                ctx.fillStyle = beamGradient;
+                ctx.beginPath();
+                ctx.moveTo(-this.beamWidth / 2, this.size * 0.3);
+                ctx.lineTo(this.beamWidth / 2, this.size * 0.3);
+                ctx.lineTo(this.beamWidth, this.beamHeight);
+                ctx.lineTo(-this.beamWidth, this.beamHeight);
+                ctx.fill();
+
+                ctx.fillStyle = `hsl(${this.hue}, 50%, 40%)`;
+                ctx.beginPath();
+                ctx.ellipse(0, -this.size * 0.2, this.size * 0.4, this.size * 0.3, 0, Math.PI, 0);
+                ctx.fill();
+
+                ctx.fillStyle = '#C0C0C0';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size, this.size * 0.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#888';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ctx.fillStyle = '#7ED321';
+                ctx.beginPath();
+                ctx.arc(0, -this.size * 0.25, this.size * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(-this.size * 0.05, -this.size * 0.28, 3, 0, Math.PI * 2);
+                ctx.arc(this.size * 0.05, -this.size * 0.28, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (this.alienHappy) {
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(0, -this.size * 0.2, 5, 0, Math.PI); ctx.stroke();
+                }
+                ctx.restore();
+            }
+            getBeamBounds() {
+                return {
+                    x: this.x - this.beamWidth, y: this.y + this.size * 0.3,
+                    width: this.beamWidth * 2, height: this.beamHeight * 0.3
+                };
+            }
+        }
+
+        class Ball {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.vx = 0; this.vy = 0;
+                this.size = 25; this.rotation = 0; this.thrown = false; this.scored = false;
+                this.color = `hsl(${Math.floor(Math.random() * 360)}, 80%, 60%)`;
+            }
+            draw() {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.rotation);
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(0, 0, this.size, 0, Math.PI, true); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-this.size, 0); ctx.lineTo(this.size, 0); ctx.stroke();
+                ctx.restore();
+            }
+            update() {
+                if (this.thrown && !this.scored) {
+                    this.x += this.vx; this.y += this.vy;
+                    this.vy += 0.25; this.rotation += this.vx * 0.03;
+                }
+            }
+        }
+
+        class Effect {
+            constructor(x, y, text) {
+                this.x = x; this.y = y; this.text = text; this.life = 1;
+            }
+            draw() {
+                ctx.save(); ctx.globalAlpha = this.life;
+                ctx.font = 'bold 2rem Fredoka'; ctx.fillStyle = '#00BFA5';
+                ctx.textAlign = 'center'; ctx.fillText(this.text, this.x, this.y - (1 - this.life) * 40);
+                ctx.restore();
+            }
+            update() { this.life -= 0.025; }
+        }
+
+        function setupUFOs() {
+            ufos = [new UFO(width * 0.2, height * 0.25, 70), new UFO(width * 0.5, height * 0.15, 80), new UFO(width * 0.8, height * 0.3, 60)];
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            ctx.clearRect(0, 0, width, height);
+
+            stars.forEach(s => {
+                const twinkle = Math.sin(Date.now() / 500 + s.twinkle) * 0.5 + 0.5;
+                ctx.fillStyle = `rgba(255, 255, 255, ${twinkle})`;
+                ctx.beginPath(); ctx.arc(s.x % width, s.y % height, s.size, 0, Math.PI * 2); ctx.fill();
+            });
+
+            ctx.fillStyle = '#0a0a15';
+            ctx.beginPath();
+            ctx.moveTo(0, height); ctx.lineTo(0, height - 80); ctx.lineTo(50, height - 80);
+            ctx.lineTo(70, height - 120); ctx.lineTo(90, height - 80); ctx.lineTo(150, height - 80);
+            ctx.lineTo(150, height - 100); ctx.lineTo(200, height - 100); ctx.lineTo(200, height - 80);
+            ctx.lineTo(width, height - 60); ctx.lineTo(width, height); ctx.fill();
+
+            ufos.forEach(u => u.draw());
+
+            if (ball) {
+                ball.update(); ball.draw();
+                if (ball.thrown && !ball.scored) {
+                    ufos.forEach(u => {
+                        const beam = u.getBeamBounds();
+                        if (ball.x > beam.x && ball.x < beam.x + beam.width && ball.y > beam.y && ball.y < beam.y + beam.height) {
+                            ball.scored = true; score++;
+                            document.getElementById('score').textContent = score;
+                            u.alienHappy = true;
+                            effects.push(new Effect(u.x, u.y - 50, 'WHOOOP!'));
+
+                            const suckUp = () => {
+                                if (ball.y > u.y) {
+                                    // Much faster "suck" speed
+                                    ball.y -= 30;
+                                    ball.x += (u.x - ball.x) * 0.2; // Stronger pull to center
+                                    ball.size *= 0.9; // Shrink effect
+                                    requestAnimationFrame(suckUp);
+                                } else {
+                                    ball = new Ball(ballSpawn().x, ballSpawn().y);
+                                    setTimeout(() => { u.alienHappy = false; }, 300); // Shorter happiness duration for snappier feel
+                                }
+                            };
+                            suckUp();
+                        }
+                    });
+                    if (ball.y > height + 50 || ball.x < -50 || ball.x > width + 50) {
+                        ball = new Ball(ballSpawn().x, ballSpawn().y);
+                    }
+                }
+            }
+
+            effects = effects.filter(e => e.life > 0);
+            effects.forEach(e => { e.update(); e.draw(); });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        canvas.addEventListener('pointerdown', (e) => {
+            if (!gameRunning || !ball || ball.thrown) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+            const dx = cx - ball.x; const dy = cy - ball.y;
+            const angle = Math.atan2(dy, dx);
+            const speed = 28;
+            ball.vx = Math.cos(angle) * speed; ball.vy = Math.sin(angle) * speed;
+            ball.thrown = true;
+
+            setTimeout(() => {
+                if (gameRunning && ball && !ball.scored && !ball.thrown) { /* Check logic */ }
+            }, 1000);
+        });
+
+        function startGame() {
+            score = 0; timeLeft = 60; gameRunning = true; effects = [];
+            document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = timeLeft;
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('endScreen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('timer').classList.remove('hidden');
+            setupUFOs();
+            ball = new Ball(ballSpawn().x, ballSpawn().y);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+            gameLoop();
+        }
+
+        function endGame() {
+            gameRunning = false; clearInterval(timerInterval);
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('timer').classList.add('hidden');
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('endScreen').classList.remove('hidden');
+        }
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+    </script>
+</body>
+
+</html>

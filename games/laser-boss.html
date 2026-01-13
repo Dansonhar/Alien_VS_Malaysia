@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Laser Lawan Alien Boss - Aliens vs Malaysians</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'fredoka': ['Fredoka', 'sans-serif'] },
+                    colors: { 'sambal': '#FF5252', 'durian': '#FFD600', 'pandan': '#00E676' }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="font-fredoka bg-gray-900 overflow-hidden touch-none select-none">
+
+    <!-- HUD -->
+    <div
+        class="fixed top-4 left-1/2 -translate-x-1/2 w-4/5 h-8 bg-gray-800 border-4 border-white rounded-full overflow-hidden z-50">
+        <div id="healthBar" class="w-full h-full bg-sambal transition-all duration-200"></div>
+    </div>
+
+    <canvas id="gameCanvas" class="block w-full h-screen"></canvas>
+
+    <!-- Start Screen -->
+    <div id="startScreen"
+        class="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-fuchsia-500 drop-shadow-[0_0_10px_rgba(224,64,251,0.8)] mb-4">
+            ALIEN BOSS FIGHT
+        </h1>
+        <p class="text-white text-lg mb-6">Use your laser!<br>Tap the WEAK POINTS to damage the boss.</p>
+        <button onclick="startGame()"
+            class="bg-fuchsia-500 text-white font-bold text-xl px-8 py-4 rounded-full border-4 border-white shadow-[0_0_15px_#E040FB] hover:scale-105 transition-all">
+            FIGHT!
+        </button>
+    </div>
+
+    <!-- End Screen -->
+    <div id="endScreen"
+        class="hidden fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 id="endTitle" class="text-4xl md:text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000] mb-6">
+            VICTORY!
+        </h1>
+        <button onclick="startGame()"
+            class="bg-pandan text-white font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+            FIGHT AGAIN
+        </button>
+        <button onclick="window.location.href='/'"
+            class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
+            BACK TO MENU
+        </button>
+    </div>
+
+    <button onclick="window.location.href='/'"
+        class="fixed top-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
+        <span class="text-2xl">🏠</span> BACK TO MENU
+    </button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let width, height;
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            if (boss) { boss.x = width / 2; boss.y = height / 2; }
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        let gameRunning = false;
+        let boss = null;
+        let lasers = [];
+        let particles = [];
+        let weakPoints = [];
+
+        class Boss {
+            constructor() {
+                this.x = width / 2;
+                this.y = height / 2;
+                this.size = 150;
+                this.maxHealth = 200;
+                this.health = 200;
+                this.angle = 0;
+                this.floatOffset = 0;
+            }
+
+            update() {
+                this.floatOffset += 0.05;
+                this.y = (height / 2) + Math.sin(this.floatOffset) * 20;
+
+                // Spawn weak points periodically
+                if (Math.random() < 0.03 && weakPoints.length < 3) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const dist = this.size * 0.8; // On the surface
+                    weakPoints.push({
+                        offsetX: Math.cos(angle) * dist,
+                        offsetY: Math.sin(angle) * dist,
+                        life: 100,
+                        maxLife: 100
+                    });
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Main Body
+                ctx.fillStyle = '#7B1FA2';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size, this.size * 0.8, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Cockpit
+                ctx.fillStyle = '#00E676';
+                ctx.beginPath();
+                ctx.arc(0, -20, 60, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Eyes (Boss Face)
+                ctx.fillStyle = '#000';
+                ctx.beginPath(); ctx.ellipse(-20, -20, 10, 20, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(20, -20, 10, 20, 0, 0, Math.PI * 2); ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        function spawnLaser(x, y) {
+            lasers.push({ x: x, y: y, life: 10 });
+
+            let hit = false;
+
+            for (let i = weakPoints.length - 1; i >= 0; i--) {
+                let wp = weakPoints[i];
+                let wx = boss.x + wp.offsetX;
+                let wy = boss.y + wp.offsetY;
+
+                let dist = Math.hypot(x - wx, y - wy);
+                if (dist < 30) {
+                    hit = true;
+                    boss.health -= 10;
+                    createParticles(wx, wy, '#FFF');
+                    weakPoints.splice(i, 1);
+
+                    const pct = (boss.health / boss.maxHealth) * 100;
+                    document.getElementById('healthBar').style.width = pct + '%';
+
+                    if (boss.health <= 0) endGame(true);
+                    return;
+                }
+            }
+
+            if (!hit) {
+                let dist = Math.hypot(x - boss.x, y - boss.y);
+                if (dist < boss.size) {
+                    createParticles(x, y, '#E040FB');
+                }
+            }
+        }
+
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 10; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 1.0,
+                    color: color
+                });
+            }
+        }
+
+        function startGame() {
+            boss = new Boss();
+            weakPoints = [];
+            lasers = [];
+            particles = [];
+            gameRunning = true;
+            document.getElementById('healthBar').style.width = '100%';
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('endScreen').classList.add('hidden');
+            loop();
+        }
+
+        function endGame(victory) {
+            gameRunning = false;
+            document.getElementById('endTitle').textContent = victory ? "VICTORY!" : "DEFEAT!";
+            document.getElementById('endScreen').classList.remove('hidden');
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (!gameRunning) return;
+            const r = canvas.getBoundingClientRect();
+            spawnLaser(e.clientX - r.left, e.clientY - r.top);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (!gameRunning) return;
+            e.preventDefault();
+            const r = canvas.getBoundingClientRect();
+            spawnLaser(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
+        });
+
+        function loop() {
+            if (!gameRunning) return;
+            ctx.clearRect(0, 0, width, height);
+
+            boss.update();
+            boss.draw();
+
+            weakPoints.forEach(wp => {
+                let wx = boss.x + wp.offsetX;
+                let wy = boss.y + wp.offsetY;
+
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = '#FFEB3B';
+                ctx.fillStyle = '#FFEB3B';
+                ctx.beginPath(); ctx.arc(wx, wy, 20, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#F44336';
+                ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.arc(wx, wy, 15, 0, Math.PI * 2); ctx.stroke();
+                ctx.shadowBlur = 0;
+            });
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.05;
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 1;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = lasers.length - 1; i >= 0; i--) {
+                let l = lasers[i];
+                l.life--;
+                ctx.fillStyle = '#00E5FF';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#00E5FF';
+                ctx.beginPath(); ctx.arc(l.x, l.y, 10, 0, Math.PI * 2); ctx.fill();
+                ctx.shadowBlur = 0;
+                if (l.life <= 0) lasers.splice(i, 1);
+            }
+
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+
+</html>
