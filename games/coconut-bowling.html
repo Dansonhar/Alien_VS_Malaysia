@@ -23,9 +23,12 @@
     class="font-fredoka bg-gradient-to-b from-blue-400 via-green-300 to-green-500 min-h-screen overflow-hidden touch-none select-none">
 
     <!-- HUD -->
-    <div class="fixed top-4 left-0 right-0 z-50 px-4 flex justify-between">
+    <div class="fixed top-4 left-0 right-0 z-50 px-4 flex justify-center gap-4">
         <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
             SCORE: <span id="score" class="text-pandan">0</span>
+        </div>
+        <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
+            <span id="timerDisplay" class="text-sambal">60</span>s
         </div>
     </div>
 
@@ -85,6 +88,8 @@
         let balls = [];
         let frameCount = 0;
         let ufoSpawnRate = 90;
+        let timeLeft = 60; // 60 second game
+        let timerInterval = null;
 
         function drawBall(x, y, scale) {
             const size = 25 * scale;
@@ -133,6 +138,7 @@
 
         function gameOver() {
             gameRunning = false;
+            if (timerInterval) clearInterval(timerInterval);
             document.getElementById('finalScore').textContent = score;
             document.getElementById('endScreen').classList.remove('hidden');
         }
@@ -142,10 +148,23 @@
             ufos = [];
             balls = [];
             frameCount = 0;
+            timeLeft = 60;
             gameRunning = true;
             document.getElementById('score').textContent = 0;
+            document.getElementById('timerDisplay').textContent = 60;
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('endScreen').classList.add('hidden');
+
+            // Start countdown timer
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timerDisplay').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    gameOver();
+                }
+            }, 1000);
+
             gameLoop();
         }
 
@@ -216,12 +235,14 @@
                 });
             }
 
-            // UFOs
+            // UFOs - just remove when reaching bottom, no game over
             for (let i = ufos.length - 1; i >= 0; i--) {
                 let u = ufos[i];
                 u.y += u.vy;
                 drawUFO(u.x, u.y);
-                if (u.y > height) gameOver();
+                if (u.y > height + 50) {
+                    ufos.splice(i, 1); // Just remove, no game over
+                }
             }
 
             // Balls
@@ -232,14 +253,13 @@
                 b.scale *= 0.98;
                 drawBall(b.x, b.y, b.scale);
 
-                // Collision
+                // Collision - removed scale check for instant response
                 for (let j = ufos.length - 1; j >= 0; j--) {
                     let u = ufos[j];
-                    if (b.scale < 0.5) continue;
                     let dx = b.x - u.x;
                     let dy = b.y - u.y;
-                    // Increased hitbox from 40 to 60 for "snappier" hits
-                    if (Math.sqrt(dx * dx + dy * dy) < 60) {
+                    // Increased hitbox to 70 for snappier hits
+                    if (Math.sqrt(dx * dx + dy * dy) < 70) {
                         createExplosion(u.x, u.y);
                         ufos.splice(j, 1);
                         balls.splice(i, 1);

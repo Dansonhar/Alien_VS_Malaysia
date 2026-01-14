@@ -24,6 +24,12 @@
     <!-- HUD -->
     <div id="hud" class="hidden fixed top-4 left-4 z-50 flex gap-4">
         <div class="bg-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-black">
+            Score: <span id="score" class="text-pandan">0</span>
+        </div>
+        <div class="bg-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-black">
+            ⏱ <span id="timer" class="text-sambal">90</span>s
+        </div>
+        <div class="bg-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-black">
             Kancil: <span id="kancilCount" class="text-sambal">5</span>
         </div>
         <div class="bg-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-black">
@@ -103,6 +109,8 @@
 
         let gameRunning = false;
         let score = 0;
+        let timeLeft = 90;
+        let timerInterval = null;
         let wave = 1;
         let kancilCount = 5;
         let busCount = 2;
@@ -197,6 +205,7 @@
         function startGame() {
             gameRunning = true;
             score = 0;
+            timeLeft = 90;
             wave = 1;
             kancilCount = 5;
             busCount = 2;
@@ -205,11 +214,22 @@
             explosionParticles = [];
 
             updateHUD();
+            document.getElementById('score').textContent = 0;
+            document.getElementById('timer').textContent = 90;
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('endScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
             document.getElementById('controls').classList.remove('hidden');
             document.getElementById('waveInfo').classList.remove('hidden');
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame(true);
+                }
+            }, 1000);
 
             loop();
             spawnLoop();
@@ -227,6 +247,7 @@
             document.getElementById('busCount').textContent = busCount;
             document.getElementById('wave').textContent = wave;
             document.getElementById('finalScore').textContent = score;
+            document.getElementById('score').textContent = score;
 
             // Update button states
             document.getElementById('btnKancil').style.opacity = kancilCount > 0 ? 1 : 0.5;
@@ -239,7 +260,8 @@
 
         function endGame(victory) {
             gameRunning = false;
-            document.getElementById('endTitle').textContent = victory ? "VICTORY!" : "DEFEAT!";
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('endTitle').textContent = victory ? "TIME'S UP!" : "DEFEAT!";
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('controls').classList.add('hidden');
             document.getElementById('waveInfo').classList.add('hidden');
@@ -325,8 +347,8 @@
                     score++;
                     updateHUD();
                 } else if (u.x < 0) {
-                    endGame(false);
-                    return;
+                    // UFO escaped - just remove, no game over
+                    ufos.splice(i, 1);
                 }
             }
 

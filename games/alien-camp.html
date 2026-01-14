@@ -22,13 +22,16 @@
 <body class="font-fredoka bg-amber-800 min-h-screen overflow-hidden touch-none select-none">
 
     <!-- HUD -->
-    <div class="fixed top-4 left-4 z-50">
+    <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-4 pointer-events-none">
         <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
-            CAMPS CLEARED: <span id="score" class="text-pandan">0</span>
+            SCORE: <span id="score" class="text-pandan">0</span>
+        </div>
+        <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
+            <span id="timer" class="text-sambal">60</span>s
         </div>
     </div>
 
-    <canvas id="gameCanvas" class="block w-full h-screen"></canvas>
+    <canvas id="gameCanvas" class="block w-full h-screen cursor-crosshair relative z-10"></canvas>
 
     <!-- Start Screen -->
     <div id="startScreen"
@@ -62,7 +65,7 @@
     </div>
 
     <button onclick="window.location.href='/'"
-        class="fixed top-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
+        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
         <span class="text-2xl">🏠</span> BACK TO MENU
     </button>
 
@@ -80,6 +83,8 @@
 
         let gameRunning = false;
         let score = 0;
+        let timeLeft = 60;
+        let timerInterval = null;
         let camps = [];
         let particles = [];
         let grenades = [];
@@ -185,14 +190,35 @@
 
         function startGame() {
             score = 0;
+            timeLeft = 60;
+            frameCount = 0;
             camps = [];
             grenades = [];
             particles = [];
             gameRunning = true;
             document.getElementById('score').textContent = 0;
+            document.getElementById('timer').textContent = 60;
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('endScreen').classList.add('hidden');
-            loop();
+
+            // Spawn a few initial camps
+            for (let i = 0; i < 3; i++) {
+                camps.push(new Camp());
+            }
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    gameRunning = false;
+                    clearInterval(timerInterval);
+                    document.getElementById('finalScore').textContent = score;
+                    document.getElementById('endScreen').classList.remove('hidden');
+                }
+            }, 1000);
+
+            requestAnimationFrame(loop);
         }
 
         canvas.addEventListener('mousedown', throwGrenade);
@@ -211,7 +237,7 @@
             ctx.clearRect(0, 0, width, height);
 
             frameCount++;
-            if (frameCount % spawnRate === 0) camps.push(new Camp());
+            if (frameCount % spawnRate === 10) camps.push(new Camp());
 
             camps.sort((a, b) => a.y - b.y);
             camps.forEach(c => { c.update(); c.draw(); });
@@ -236,13 +262,14 @@
                 ctx.arc(p.x, p.y, p.life * 20, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.globalAlpha = 1;
-                if (p.life <= 0) particles.splice(i, 1);
+                if (p.life <= 1) particles.splice(i, 1);
             }
 
-            if (camps.length > 10) {
-                gameRunning = false;
-                document.getElementById('finalScore').textContent = score;
-                document.getElementById('endScreen').classList.remove('hidden');
+            // Remove camps that go offscreen or are too old, no game over for too many camps
+            for (let i = camps.length - 1; i >= 0; i--) {
+                if (camps[i].size >= camps[i].maxSize + 100) {
+                    camps.splice(i, 1);
+                }
             }
 
             requestAnimationFrame(loop);

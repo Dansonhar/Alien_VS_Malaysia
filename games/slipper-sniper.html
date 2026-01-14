@@ -189,6 +189,9 @@
     <canvas id="gameCanvas"></canvas>
 
     <div id="hud" class="hidden">Hits: <span id="score">0</span></div>
+    <div id="timerDisplay" class="hidden"
+        style="position:absolute;top:20px;left:50%;transform:translateX(-50%);font-size:1.8rem;color:#fff;text-shadow:2px 2px 0 #333;z-index:5;">
+        ⏱ <span id="timer">60</span>s</div>
     <div id="aliensLeft" class="hidden">Aliens: <span id="remaining">10</span></div>
 
     <div id="startScreen" class="screen">
@@ -218,6 +221,8 @@
         window.addEventListener('resize', resize);
 
         let score = 0;
+        let timeLeft = 60;
+        let timerInterval = null;
         let aliensRemaining = 10;
         let gameRunning = false;
         let slipper = null;
@@ -429,10 +434,6 @@
                             document.getElementById('score').textContent = score;
                             document.getElementById('remaining').textContent = aliensRemaining;
                             effects.push(new Effect(a.x, a.y, 'BONK!'));
-
-                            if (aliensRemaining <= 0) {
-                                setTimeout(endGame, 500);
-                            }
                         }
                     });
 
@@ -484,22 +485,37 @@
 
         function startGame() {
             score = 0;
+            timeLeft = 60;
             gameRunning = true;
             document.getElementById('score').textContent = score;
+            document.getElementById('timer').textContent = 60;
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('endScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('timerDisplay').classList.remove('hidden');
             document.getElementById('aliensLeft').classList.remove('hidden');
 
             setupLevel();
             slipper = new Slipper(slipperSpawn().x, slipperSpawn().y);
             effects = [];
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
             gameLoop();
         }
 
         function endGame() {
             gameRunning = false;
+            if (timerInterval) clearInterval(timerInterval);
             document.getElementById('hud').classList.add('hidden');
+            document.getElementById('timerDisplay').classList.add('hidden');
             document.getElementById('aliensLeft').classList.add('hidden');
             document.getElementById('finalScore').textContent = score;
             document.getElementById('endScreen').classList.remove('hidden');

@@ -22,12 +22,20 @@
 <body class="font-fredoka bg-gray-900 overflow-hidden touch-none select-none">
 
     <!-- HUD -->
+    <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-4 pointer-events-none">
+        <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
+            SCORE: <span id="score" class="text-pandan">0</span>
+        </div>
+        <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
+            <span id="timer" class="text-sambal">90</span>s
+        </div>
+    </div>
     <div
-        class="fixed top-4 left-1/2 -translate-x-1/2 w-4/5 h-8 bg-gray-800 border-4 border-white rounded-full overflow-hidden z-50">
+        class="fixed top-16 left-1/2 -translate-x-1/2 w-4/5 h-8 bg-gray-800 border-4 border-white rounded-full overflow-hidden z-40 pointer-events-none">
         <div id="healthBar" class="w-full h-full bg-sambal transition-all duration-200"></div>
     </div>
 
-    <canvas id="gameCanvas" class="block w-full h-screen"></canvas>
+    <canvas id="gameCanvas" class="block w-full h-screen cursor-crosshair relative z-10"></canvas>
 
     <!-- Start Screen -->
     <div id="startScreen"
@@ -59,7 +67,7 @@
     </div>
 
     <button onclick="window.location.href='/'"
-        class="fixed top-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
+        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
         <span class="text-2xl">🏠</span> BACK TO MENU
     </button>
 
@@ -77,6 +85,9 @@
         resize();
 
         let gameRunning = false;
+        let score = 0;
+        let timeLeft = 90;
+        let timerInterval = null;
         let boss = null;
         let lasers = [];
         let particles = [];
@@ -149,6 +160,8 @@
                 if (dist < 30) {
                     hit = true;
                     boss.health -= 10;
+                    score++;
+                    document.getElementById('score').textContent = score;
                     createParticles(wx, wy, '#FFF');
                     weakPoints.splice(i, 1);
 
@@ -181,20 +194,35 @@
         }
 
         function startGame() {
+            score = 0;
+            timeLeft = 90;
             boss = new Boss();
             weakPoints = [];
             lasers = [];
             particles = [];
             gameRunning = true;
+            document.getElementById('score').textContent = 0;
+            document.getElementById('timer').textContent = 90;
             document.getElementById('healthBar').style.width = '100%';
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('endScreen').classList.add('hidden');
-            loop();
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+
+            requestAnimationFrame(loop);
         }
 
         function endGame(victory) {
             gameRunning = false;
-            document.getElementById('endTitle').textContent = victory ? "VICTORY!" : "DEFEAT!";
+            if (timerInterval) clearInterval(timerInterval);
+            document.getElementById('endTitle').textContent = victory ? "VICTORY!" : "TIME'S UP!";
             document.getElementById('endScreen').classList.remove('hidden');
         }
 
