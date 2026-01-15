@@ -377,24 +377,61 @@
 
         // Asset paths
         const ASSETS = {
-            alienNormal: '../assets/alien_normal.png',
-            alienHelmet: '../assets/alien_helmet.png',
-            alienHit: '../assets/alien_hit.png',
+            alienNormal: '../assets/alien_purple_v2.png',
+            alienHelmet: '../assets/alien_purple_v2.png',
+            alienHit: '../assets/alien_purple_v2.png',
             durian: '../assets/durian.png', // Not used but available
             malaysianMale: '../assets/malaysian_male.png',
-            malaysianFemale: '../assets/malaysian_female.png'
+            malaysianFemale: '../assets/malaysian_female_v2.png',
+            heroBanner: '../assets/hero-banner-final.jpg'
         };
 
         // Preload images
         const images = {};
         let imagesLoaded = 0;
 
+        function processTransparency(img) {
+            const c = document.createElement('canvas');
+            c.width = img.width;
+            c.height = img.height;
+            const ctx = c.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const id = ctx.getImageData(0, 0, c.width, c.height);
+            const d = id.data;
+
+            // Detect background color from top-left pixel
+            const bgR = d[0];
+            const bgG = d[1];
+            const bgB = d[2];
+
+            // Replace matching background color with transparency
+            const range = 50;
+            for (let i = 0; i < d.length; i += 4) {
+                if (Math.abs(d[i] - bgR) < range &&
+                    Math.abs(d[i + 1] - bgG) < range &&
+                    Math.abs(d[i + 2] - bgB) < range) {
+                    d[i + 3] = 0;
+                }
+            }
+
+            ctx.putImageData(id, 0, 0);
+            const newImg = new Image();
+            newImg.src = c.toDataURL();
+            return newImg;
+        }
+
         Object.entries(ASSETS).forEach(([key, src]) => {
             const img = new Image();
-            img.onload = () => { imagesLoaded++; };
+            img.onload = () => {
+                if (key === 'alienNormal' || key === 'malaysianFemale') {
+                    images[key] = processTransparency(img);
+                } else {
+                    images[key] = img;
+                }
+                imagesLoaded++;
+            };
             img.onerror = () => { imagesLoaded++; console.log('Asset not found:', src); };
             img.src = src;
-            images[key] = img;
         });
 
         // Difficulty Settings
@@ -440,38 +477,306 @@
             muzzleFlashes = [];
         }
 
+        // Background Management
+        class GameBackground {
+            constructor() {
+                // Fireflies
+                this.fireflies = [];
+                for (let i = 0; i < 20; i++) {
+                    this.fireflies.push({
+                        x: Math.random() * width,
+                        y: height - Math.random() * 300,
+                        size: Math.random() * 3 + 1,
+                        speedX: (Math.random() - 0.5) * 0.5,
+                        speedY: (Math.random() - 0.5) * 0.5,
+                        alpha: Math.random(),
+                        fadeDir: Math.random() > 0.5 ? 0.02 : -0.02
+                    });
+                }
+
+                // Clouds
+                this.clouds = [];
+                for (let i = 0; i < 5; i++) {
+                    this.clouds.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height * 0.3,
+                        size: 60 + Math.random() * 60,
+                        speed: 0.1 + Math.random() * 0.2
+                    });
+                }
+
+                // Stars
+                this.stars = [];
+                for (let i = 0; i < 80; i++) {
+                    this.stars.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height * 0.6,
+                        size: Math.random() * 2,
+                        twinkle: Math.random()
+                    });
+                }
+            }
+
+            update() {
+                // Fireflies
+                this.fireflies.forEach(f => {
+                    f.x += f.speedX;
+                    f.y += f.speedY;
+                    f.alpha += f.fadeDir;
+                    if (f.alpha > 1 || f.alpha < 0) f.fadeDir *= -1;
+                    if (f.x < 0) f.x = width;
+                    if (f.x > width) f.x = 0;
+                });
+
+                // Clouds
+                this.clouds.forEach(c => {
+                    c.x += c.speed;
+                    if (c.x > width + 100) c.x = -100;
+                });
+
+                // Stars
+                this.stars.forEach(s => {
+                    s.twinkle += 0.05;
+                });
+            }
+
+            draw() {
+                // 1. Sky Gradient (Deep Purple/Blue Night)
+                const grad = ctx.createLinearGradient(0, 0, 0, height);
+                grad.addColorStop(0, '#0f172a'); // Slate 900
+                grad.addColorStop(0.5, '#1e1b4b'); // Indigo 950
+                grad.addColorStop(1, '#312e81'); // Indigo 900
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+
+                // 2. Stars
+                ctx.fillStyle = '#FFF';
+                this.stars.forEach(s => {
+                    ctx.globalAlpha = 0.5 + Math.sin(s.twinkle) * 0.4;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+
+                // 3. Moon (Glowing)
+                const moonX = width - 100;
+                const moonY = 80;
+                // Glow
+                const moonGlow = ctx.createRadialGradient(moonX, moonY, 20, moonX, moonY, 60);
+                moonGlow.addColorStop(0, 'rgba(255, 255, 210, 0.4)');
+                moonGlow.addColorStop(1, 'rgba(255, 255, 210, 0)');
+                ctx.fillStyle = moonGlow;
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, 60, 0, Math.PI * 2);
+                ctx.fill();
+                // Body
+                ctx.fillStyle = '#fef3c7';
+                ctx.beginPath();
+                ctx.arc(moonX, moonY, 25, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 4. Clouds (Back)
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                this.clouds.forEach(c => {
+                    this.drawCloud(c.x, c.y, c.size);
+                });
+
+                // 5. Far Hills (Silhouette)
+                ctx.fillStyle = '#1e1b4b'; // Dark Indigo
+                ctx.beginPath();
+                ctx.moveTo(0, height);
+                ctx.lineTo(0, height * 0.65);
+                ctx.bezierCurveTo(width * 0.3, height * 0.55, width * 0.7, height * 0.7, width, height * 0.6);
+                ctx.lineTo(width, height);
+                ctx.fill();
+
+                // 6. Mid Layer (Palm Trees)
+                ctx.fillStyle = '#312e81'; // Lighter Indigo
+                this.drawPalmTree(width * 0.1, height * 0.75, 120);
+                this.drawPalmTree(width * 0.85, height * 0.8, 140);
+                this.drawPalmTree(width * 0.2, height * 0.85, 100);
+
+                // 7. Ground
+                ctx.fillStyle = '#172554'; // Blue 950
+                ctx.fillRect(0, height * 0.8, width, height * 0.2);
+
+                // 8. Houses (Detailed Silhouette)
+                // Left House
+                this.drawKampungHouse(50, height * 0.8 - 60, 0.8);
+                // Right House
+                this.drawKampungHouse(width - 180, height * 0.8 - 70, 0.9);
+
+                // 9. Fireflies
+                this.fireflies.forEach(f => {
+                    ctx.fillStyle = 'rgba(253, 224, 71, ' + f.alpha + ')'; // Yellow
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Glow
+                    ctx.fillStyle = 'rgba(253, 224, 71, ' + (f.alpha * 0.3) + ')';
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, f.size * 3, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            drawCloud(x, y, size) {
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.arc(x + size * 0.6, y - size * 0.2, size * 0.8, 0, Math.PI * 2);
+                ctx.arc(x - size * 0.6, y - size * 0.2, size * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            drawPalmTree(x, y, h) {
+                // Trunk
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.quadraticCurveTo(x + 10, y - h / 2, x - 5, y - h);
+                ctx.lineTo(x + 5, y - h);
+                ctx.quadraticCurveTo(x + 20, y - h / 2, x + 15, y);
+                ctx.fill();
+
+                // Leaves
+                const tipX = x; // Approximate top
+                const tipY = y - h;
+                for (let i = 0; i < 7; i++) {
+                    const angle = (Math.PI / 4) + (Math.PI / 6) * i; // Arc spread
+                    const len = 40 + Math.random() * 20;
+                    const ex = tipX + Math.cos(angle) * len;
+                    const ey = tipY - h * 0.2 + Math.sin(angle) * len;
+
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = ctx.fillStyle; // Inherit color
+                    ctx.beginPath();
+                    ctx.moveTo(tipX, tipY);
+                    ctx.quadraticCurveTo(tipX + (ex - tipX) / 2, tipY - 20, ex, ey);
+                    ctx.stroke();
+                }
+                ctx.lineWidth = 1;
+            }
+
+            drawKampungHouse(x, y, scale) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.scale(scale, scale);
+                ctx.fillStyle = '#0f172a'; // Dark silhouette
+
+                // Stilts
+                ctx.fillRect(10, 50, 5, 30);
+                ctx.fillRect(30, 50, 5, 30);
+                ctx.fillRect(60, 50, 5, 30);
+                ctx.fillRect(90, 50, 5, 30);
+
+                // Floor/Body
+                ctx.fillRect(0, 0, 110, 50);
+
+                // Roof (Trapezoid/Triangle mix)
+                ctx.beginPath();
+                ctx.moveTo(-10, 0);
+                ctx.lineTo(120, 0);
+                ctx.lineTo(100, -30);
+                ctx.lineTo(10, -30);
+                ctx.closePath();
+                ctx.fill();
+                // Top Roof
+                ctx.beginPath();
+                ctx.moveTo(10, -30);
+                ctx.lineTo(100, -30);
+                ctx.lineTo(55, -50);
+                ctx.closePath();
+                ctx.fill();
+
+                // Window glow
+                ctx.fillStyle = 'rgba(253, 224, 71, 0.6)'; // Yellow light
+                ctx.fillRect(20, 15, 20, 20);
+                ctx.fillRect(70, 15, 20, 20);
+
+                ctx.restore();
+            }
+        }
+
+        const bg = new GameBackground();
+
         // Target Class
         class Target {
             constructor() {
                 const settings = difficultySettings[difficulty];
+
+                // Determine Type
                 this.isReal = Math.random() >= settings.fakeChance;
-                this.fakeType = !this.isReal ? fakeTypes[Math.floor(Math.random() * fakeTypes.length)] : null;
+
+                // 20% Unknown/Malaysian chance if fake
+                if (!this.isReal) {
+                    if (Math.random() < 0.2) {
+                        this.fakeType = 'malaysian';
+                    } else {
+                        // Exclude malaysian from standard fakes list to avoid double counting if I added it there
+                        this.fakeType = fakeTypes[Math.floor(Math.random() * fakeTypes.length)];
+                    }
+                } else {
+                    this.fakeType = null;
+                }
+
+                // Disguise logic (Real Only)
                 this.hasDisguise = this.isReal && Math.random() < settings.disguiseChance;
                 this.disguiseType = this.hasDisguise ? disguiseTypes[Math.floor(Math.random() * disguiseTypes.length)] : null;
                 this.disguiseFalling = false;
 
-                this.size = 200;
-                this.x = Math.random() * (width - 150) + 75;
-                this.y = Math.random() * (height * 0.6) + 80;
+                // Malaysian properties
+                this.isMalaysian = this.fakeType === 'malaysian';
+                this.malaysianGender = Math.random() > 0.5 ? 'male' : 'female';
+                this.size = this.isMalaysian ? 180 : 200;
+
+                // Anti-Overlap Spawn
+                let safe = false;
+                let attempts = 0;
+                while (!safe && attempts < 20) {
+                    this.x = Math.random() * (width - 200) + 100;
+                    this.y = Math.random() * (height * 0.6) + 100;
+
+                    safe = true;
+                    for (const t of targets) {
+                        const dx = this.x - t.x;
+                        const dy = this.y - t.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        // Ensure at least 50px gap between edges
+                        if (dist < (this.size / 2 + t.size / 2 + 50)) {
+                            safe = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                }
+
                 this.state = 'active';
                 this.animTimer = 0;
                 this.wobble = Math.random() * Math.PI * 2;
                 this.life = settings.targetLife;
                 this.hoverTime = 0;
                 this.hue = this.isReal ? 120 : 0;
+
+                // Fun Movement: Random velocity
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 1;
             }
 
             update() {
                 if (this.state === 'active') {
                     this.wobble += 0.05;
-                    this.x += Math.sin(this.wobble) * 0.5;
-                    this.y += Math.cos(this.wobble * 0.7) * 0.3;
+
+                    // Fun Movement
+                    this.x += this.vx + Math.sin(this.wobble) * 0.5;
+                    this.y += this.vy + Math.cos(this.wobble * 0.7) * 0.3;
+
+                    // Bounce off walls
+                    if (this.x < 80 || this.x > width - 80) this.vx *= -1;
+                    if (this.y < 80 || this.y > height * 0.7) this.vy *= -1;
 
                     // Keep in bounds
-                    if (this.x < 60) this.x = 60;
-                    if (this.x > width - 60) this.x = width - 60;
-                    if (this.y < 80) this.y = 80;
-                    if (this.y > height * 0.65) this.y = height * 0.65;
+                    this.x = Math.max(80, Math.min(width - 80, this.x));
+                    this.y = Math.max(80, Math.min(height * 0.7, this.y));
 
                     this.life--;
                     if (this.life <= 0) return false;
@@ -527,22 +832,33 @@
 
             drawAlien() {
                 // Try PNG assets
+                // Always use normal image as base since we don't have separate sprites
                 let img = images.alienNormal;
-                if (this.state === 'hit') img = images.alienHit;
+
+                // Programmatic Hit Effect (Red Tint) instead of swapping image
+                if (this.state === 'hit') {
+                    ctx.filter = 'brightness(0.8) sepia(1) hue-rotate(-50deg) saturate(5)';
+                }
 
                 if (img && img.complete && img.naturalWidth > 0) {
                     ctx.drawImage(img, -this.size / 2, -this.size / 2 * 0.85, this.size, this.size * 0.85);
 
-                    // Green skin visible (shows even with disguise)
-                    // We add this extra "skin check" just to be sure the disguise is "bad"
+                    // Reset filter
+                    ctx.filter = 'none';
+
+                    // Green skin visible check - CHANGED to handle new alien (purple)
+                    // We remove the green skin circle for the purple alien, or adapt it?
+                    // The old code drew a green circle if hasDisguise. 
+                    // Let's remove it or make it purple to match.
                     if (this.hasDisguise) {
-                        ctx.fillStyle = '#4CAF50';
+                        ctx.fillStyle = '#673AB7'; // Purple skin matching new alien
                         ctx.beginPath();
                         ctx.arc(-25, 5, 8, 0, Math.PI * 2);
                         ctx.arc(25, 5, 8, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 } else {
+                    ctx.filter = 'none'; // Safety reset
                     this.drawAlienFallback();
                 }
             }
@@ -648,7 +964,24 @@
             }
 
             drawFakeTarget() {
-                if (this.fakeType === 'cardboard') {
+                if (this.fakeType === 'malaysian') {
+                    // MALAYSIAN HUMAN
+                    const imgKey = this.malaysianGender === 'male' ? 'malaysianMale' : 'malaysianFemale';
+                    const img = images[imgKey];
+
+                    if (img && img.complete && img.naturalWidth > 0) {
+                        ctx.drawImage(img, -this.size / 2, -this.size / 2, this.size, this.size);
+                    } else {
+                        // Fallback circle
+                        ctx.fillStyle = '#2196F3';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#FFF';
+                        ctx.fillText('HUMAN', -20, 0);
+                    }
+
+                } else if (this.fakeType === 'cardboard') {
                     // Cardboard alien cutout
                     ctx.fillStyle = '#D7CCC8';
                     ctx.beginPath();
@@ -1180,7 +1513,10 @@
                         popups.push(new Popup(target.x, target.y - 50, '-5', '#FF5252'));
 
                         // Reaction based on type
-                        if (target.fakeType === 'cactus') {
+                        if (target.fakeType === 'malaysian') {
+                            const reactions = ['ADOI!', 'GILA KE?!', 'MATA MANA?', 'SALAH LA!', 'SAYANG NYA!'];
+                            popups.push(new Popup(target.x, target.y - 90, reactions[Math.floor(Math.random() * reactions.length)], '#FFC107', true));
+                        } else if (target.fakeType === 'cactus') {
                             popups.push(new Popup(target.x, target.y - 90, 'OUCH!', '#FF9800', true));
                         } else if (target.fakeType === 'balloon') {
                             popups.push(new Popup(target.x, target.y - 90, 'POP!', '#2196F3', true));
@@ -1245,7 +1581,8 @@
             ctx.fillStyle = '#ECEFF1';
             ctx.fillRect(0, 0, width, height);
 
-            // Draw background
+            // Update and draw background
+            bg.update();
             drawBackground();
 
             // Spawn targets
@@ -1286,41 +1623,7 @@
         }
 
         function drawBackground() {
-            // Simple shooting range background
-            const gradient = ctx.createLinearGradient(0, 0, 0, height);
-            gradient.addColorStop(0, '#546E7A');
-            gradient.addColorStop(0.7, '#37474F');
-            gradient.addColorStop(1, '#263238');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, width, height);
-
-            // Wall texture (simple bricks)
-            ctx.fillStyle = 'rgba(0,0,0,0.1)';
-            for (let y = 0; y < height * 0.75; y += 30) {
-                for (let x = (y % 60 === 0 ? 0 : 30); x < width; x += 60) {
-                    ctx.fillRect(x, y, 58, 28);
-                }
-            }
-
-            // Floor
-            ctx.fillStyle = '#5D4037';
-            ctx.fillRect(0, height * 0.75, width, height * 0.25);
-
-            // Floor lines
-            ctx.strokeStyle = '#4E342E';
-            ctx.lineWidth = 2;
-            for (let x = 0; x < width; x += 80) {
-                ctx.beginPath();
-                ctx.moveTo(x, height * 0.75);
-                ctx.lineTo(x + 40, height);
-                ctx.stroke();
-            }
-
-            // Target stands
-            ctx.fillStyle = '#795548';
-            ctx.fillRect(50, height * 0.6, 15, height * 0.15);
-            ctx.fillRect(width - 65, height * 0.6, 15, height * 0.15);
-            ctx.fillRect(width / 2 - 7, height * 0.55, 15, height * 0.2);
+            bg.draw();
         }
 
         // Initial draw
