@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Laser Lawan Alien Boss - Aliens vs Malaysians</title>
+    <title>Laser vs Alien - Aliens vs Malaysians</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -17,270 +17,1489 @@
             }
         }
     </script>
+    <style>
+        .hit-marker {
+            position: fixed;
+            pointer-events: none;
+            font-size: 40px;
+            font-weight: bold;
+            animation: hitPop 0.3s ease-out forwards;
+            z-index: 200;
+        }
+
+        @keyframes hitPop {
+            0% {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .combo-text {
+            position: fixed;
+            pointer-events: none;
+            font-size: 50px;
+            font-weight: bold;
+            animation: comboFloat 1s ease-out forwards;
+            z-index: 200;
+        }
+
+        @keyframes comboFloat {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100px) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .damage-flash {
+            animation: damageFlash 0.2s ease-out;
+        }
+
+        @keyframes damageFlash {
+
+            0%,
+            100% {
+                background-color: transparent;
+            }
+
+            50% {
+                background-color: rgba(255, 0, 0, 0.5);
+            }
+        }
+
+        .powerup-flash {
+            animation: powerupFlash 0.3s ease-out;
+        }
+
+        @keyframes powerupFlash {
+
+            0%,
+            100% {
+                background-color: transparent;
+            }
+
+            50% {
+                background-color: rgba(0, 255, 100, 0.3);
+            }
+        }
+
+        /* Turn-based mode animations */
+        .pulse-text {
+            animation: pulseText 1s ease-in-out infinite;
+        }
+
+        @keyframes pulseText {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.9;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        .score-zoom {
+            animation: scoreZoom 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes scoreZoom {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .winner-bounce {
+            animation: winnerBounce 0.5s ease-out forwards, winnerGlow 1s ease-in-out infinite 0.5s;
+        }
+
+        @keyframes winnerBounce {
+            0% {
+                transform: scale(0) rotate(-10deg);
+            }
+
+            50% {
+                transform: scale(1.3) rotate(5deg);
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes winnerGlow {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 20px gold);
+            }
+
+            50% {
+                filter: drop-shadow(0 0 40px gold) drop-shadow(0 0 60px orange);
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .timer-urgent {
+            animation: timerPulse 0.5s ease-in-out infinite;
+            color: #FF5252 !important;
+        }
+
+        @keyframes timerPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+    </style>
 </head>
 
 <body class="font-fredoka bg-gray-900 overflow-hidden touch-none select-none">
 
     <!-- HUD -->
-    <div class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-4 pointer-events-none">
-        <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
-            SCORE: <span id="score" class="text-pandan">0</span>
+    <div id="hud" class="hidden fixed inset-0 pointer-events-none z-50">
+        <!-- Top Bar -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4 flex-wrap justify-center">
+            <div
+                class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
+                LEVEL: <span id="level" class="text-purple-600">1</span>
+            </div>
+            <div id="p1ScoreBox"
+                class="bg-cyan-500/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg text-white">
+                P1: <span id="p1Score">0</span>
+            </div>
+            <div id="p2ScoreBox"
+                class="hidden bg-orange-500/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg text-white">
+                P2: <span id="p2Score">0</span>
+            </div>
+            <div id="p1ComboBox"
+                class="hidden bg-cyan-400/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
+                🔥 P1: <span id="p1ComboCount">0</span>x
+            </div>
+            <div id="p2ComboBox"
+                class="hidden bg-orange-400/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
+                🔥 P2: <span id="p2ComboCount">0</span>x
+            </div>
+            <!-- Turn Timer -->
+            <div id="turnTimerBox"
+                class="hidden bg-purple-600/90 px-6 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl text-white">
+                ⏱️ <span id="turnTimer">45</span>
+            </div>
         </div>
-        <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
-            <span id="timer" class="text-sambal">90</span>s
+
+        <!-- Power-up Status -->
+        <div id="powerupStatus" class="absolute top-20 left-1/2 -translate-x-1/2 flex gap-2">
+            <div id="shieldStatus" class="hidden bg-blue-500 px-3 py-1 rounded-full text-white font-bold">🛡️ <span
+                    id="shieldCount">3</span></div>
+            <div id="rapidStatus" class="hidden bg-red-500 px-3 py-1 rounded-full text-white font-bold">⚡ RAPID</div>
+        </div>
+
+        <!-- Single Player Health Bar (Bottom Center) -->
+        <div id="singleHealthContainer" class="absolute bottom-8 left-1/2 -translate-x-1/2 w-4/5 md:w-1/2">
+            <div id="healthTitle" class="text-white font-bold text-center mb-2 drop-shadow-[0_2px_0_#000]">TEAM HEALTH
+            </div>
+            <div
+                class="w-full h-6 bg-gray-800 border-4 border-white rounded-full overflow-hidden shadow-[0_4px_0_#000]">
+                <div id="healthBar" class="w-full h-full bg-pandan transition-all duration-200"></div>
+            </div>
+        </div>
+
+        <!-- 2-Player Health Bars -->
+        <div id="p1HealthContainer" class="hidden absolute bottom-8 left-8 w-2/5 md:w-1/4">
+            <div class="text-cyan-400 font-bold text-center mb-2 drop-shadow-[0_2px_0_#000]">P1 HEALTH</div>
+            <div
+                class="w-full h-6 bg-gray-800 border-4 border-cyan-400 rounded-full overflow-hidden shadow-[0_4px_0_#000]">
+                <div id="p1HealthBar" class="w-full h-full bg-cyan-400 transition-all duration-200"></div>
+            </div>
+        </div>
+        <div id="p2HealthContainer" class="hidden absolute bottom-8 right-8 w-2/5 md:w-1/4">
+            <div class="text-orange-400 font-bold text-center mb-2 drop-shadow-[0_2px_0_#000]">P2 HEALTH</div>
+            <div
+                class="w-full h-6 bg-gray-800 border-4 border-orange-400 rounded-full overflow-hidden shadow-[0_4px_0_#000]">
+                <div id="p2HealthBar" class="w-full h-full bg-orange-400 transition-all duration-200"></div>
+            </div>
         </div>
     </div>
-    <div
-        class="fixed top-20 left-1/2 -translate-x-1/2 w-4/5 h-8 bg-gray-800 border-4 border-white rounded-full overflow-hidden z-40 pointer-events-none">
-        <div id="healthBar" class="w-full h-full bg-sambal transition-all duration-200"></div>
+
+    <!-- Countdown Overlay -->
+    <div id="countdown"
+        class="hidden fixed inset-0 flex items-center justify-center z-[80] bg-black/70 pointer-events-none">
+        <div id="countdownText" class="text-9xl font-bold text-white drop-shadow-[0_8px_0_#000] animate-bounce">3</div>
     </div>
 
-    <canvas id="gameCanvas" class="block w-full h-screen cursor-crosshair"></canvas>
+    <!-- Damage/Powerup Flash Overlay -->
+    <div id="flashOverlay" class="fixed inset-0 pointer-events-none z-40"></div>
 
-    <!-- Start Screen -->
-    <div id="startScreen"
-        class="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1 class="text-4xl md:text-5xl font-bold text-fuchsia-500 drop-shadow-[0_0_10px_rgba(224,64,251,0.8)] mb-4">
-            ALIEN BOSS FIGHT
+    <canvas id="gameCanvas" class="block w-full h-screen"></canvas>
+
+    <!-- Main Menu -->
+    <div id="mainMenu"
+        class="fixed inset-0 bg-gradient-to-b from-purple-900 to-black flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 class="text-5xl md:text-7xl font-bold text-cyan-400 drop-shadow-[0_4px_0_#000] mb-2">
+            LASER vs ALIEN
         </h1>
-        <p class="text-white text-lg mb-6">Use your laser!<br>Tap the WEAK POINTS to damage the boss.</p>
-        <button onclick="startGame()"
-            class="bg-fuchsia-500 text-white font-bold text-xl px-8 py-4 rounded-full border-4 border-white shadow-[0_0_15px_#E040FB] hover:scale-105 transition-all">
-            FIGHT!
+        <p class="text-white text-xl mb-8">Defend Malaysia! Shoot the aliens!</p>
+
+        <button onclick="startGame(1)"
+            class="bg-cyan-500 text-white font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#0891B2] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#0891B2] transition-all mb-4 w-64">
+            👤 1 PLAYER
+        </button>
+
+        <button onclick="startGame(2)"
+            class="bg-orange-500 text-white font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#C2410C] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#C2410C] transition-all mb-4 w-64">
+            👥 2 PLAYER
+        </button>
+
+        <button onclick="startPractice()"
+            class="bg-yellow-500 text-black font-bold text-xl px-8 py-3 rounded-full border-4 border-black shadow-[0_6px_0_#B45309] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_3px_0_#B45309] transition-all w-64">
+            🎯 PRACTICE
         </button>
     </div>
 
-    <!-- End Screen -->
-    <div id="endScreen"
-        class="hidden fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1 id="endTitle" class="text-4xl md:text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000] mb-6">
-            VICTORY!
+    <!-- Player Ready Screen (Turn-based 2P) -->
+    <div id="playerReadyScreen"
+        class="hidden fixed inset-0 bg-gradient-to-b from-purple-900 to-black flex flex-col items-center justify-center z-[90] text-center px-4">
+        <div id="playerReadyIcon" class="text-9xl mb-4 pulse-text">🎯</div>
+        <h1 id="playerReadyText"
+            class="text-5xl md:text-7xl font-bold text-cyan-400 drop-shadow-[0_6px_0_#000] mb-4 pulse-text">
+            PLAYER 1 READY?
         </h1>
-        <button onclick="startGame()"
-            class="bg-pandan text-white font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
-            FIGHT AGAIN
+        <p class="text-white text-2xl">Get ready to blast some aliens!</p>
+    </div>
+
+    <!-- Score Reveal Screen (After each turn) -->
+    <div id="scoreRevealScreen"
+        class="hidden fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[95] text-center px-4">
+        <div id="confettiContainer"></div>
+        <h2 id="scoreRevealTitle" class="text-4xl md:text-5xl font-bold text-cyan-400 drop-shadow-[0_4px_0_#000] mb-4">
+            PLAYER 1 SCORED
+        </h2>
+        <div id="scoreRevealNumber"
+            class="text-8xl md:text-9xl font-bold text-durian drop-shadow-[0_8px_0_#000] mb-8 score-zoom">
+            0
+        </div>
+        <p class="text-white text-xl animate-pulse">Tap to continue...</p>
+    </div>
+
+    <!-- Winner Screen (Final Result) -->
+    <div id="winnerScreen"
+        class="hidden fixed inset-0 bg-gradient-to-b from-purple-900 via-black to-purple-900 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <div id="winnerConfettiContainer"></div>
+        <div id="winnerIcon" class="text-9xl mb-4 winner-bounce">🏆</div>
+        <h1 id="winnerTitle"
+            class="text-5xl md:text-7xl font-bold text-durian drop-shadow-[0_6px_0_#000] mb-4 winner-bounce">
+            PLAYER 1 WINS!
+        </h1>
+        <div class="flex gap-8 justify-center mb-8">
+            <div class="text-center">
+                <div class="text-cyan-400 font-bold text-2xl">Player 1</div>
+                <div id="winnerP1Score" class="text-5xl font-bold text-white drop-shadow-[0_4px_0_#000]">0</div>
+            </div>
+            <div class="text-6xl font-bold text-white">VS</div>
+            <div class="text-center">
+                <div class="text-orange-400 font-bold text-2xl">Player 2</div>
+                <div id="winnerP2Score" class="text-5xl font-bold text-white drop-shadow-[0_4px_0_#000]">0</div>
+            </div>
+        </div>
+        <div class="flex flex-col gap-4">
+            <button onclick="rematch()"
+                class="bg-pandan text-white font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all">
+                🔥 FIGHT AGAIN!
+            </button>
+            <button onclick="returnToMainMenu()"
+                class="bg-gray-600 text-white font-bold text-xl px-8 py-3 rounded-full border-4 border-black shadow-[0_6px_0_#374151] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_3px_0_#374151] transition-all">
+                🏠 MAIN MENU
+            </button>
+        </div>
+    </div>
+    <div id="endScreen"
+        class="hidden fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 id="endTitle" class="text-5xl md:text-6xl font-bold drop-shadow-[0_4px_0_#000] mb-4 text-sambal">
+            GAME OVER
+        </h1>
+        <div id="finalScores" class="mb-8">
+            <p class="text-white text-2xl mb-2">Final Scores:</p>
+            <div class="flex gap-8 justify-center">
+                <div class="text-center">
+                    <div class="text-cyan-400 font-bold text-xl">Player 1</div>
+                    <div id="finalP1" class="text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000]">0</div>
+                </div>
+                <div id="finalP2Box" class="hidden text-center">
+                    <div class="text-orange-400 font-bold text-xl">Player 2</div>
+                    <div id="finalP2" class="text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000]">0</div>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="location.reload()"
+            class="bg-pandan text-white font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all">
+            PLAY AGAIN
         </button>
         <button onclick="window.location.href='../'"
             class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
-            BACK TO MENU
+            BACK TO HUB
         </button>
     </div>
 
-    <button onclick="window.location.href='../'"
-        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
-        <span class="text-2xl">🏠</span> BACK TO MENU
+    <button onclick="returnToGameMenu()"
+        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2 pointer-events-auto">
+        <span class="text-2xl">🔙</span> MENU
     </button>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-
         let width, height;
+
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            if (boss) { boss.x = width / 2; boss.y = height / 2; }
         }
         window.addEventListener('resize', resize);
         resize();
 
-        var gameRunning = false;
-        var score = 0;
-        var timeLeft = 90;
-        var timerInterval = null;
-        var boss = null;
-        var lasers = [];
-        var particles = [];
-        var weakPoints = [];
+        // Game State
+        let gameRunning = false;
+        let practiceMode = false;
+        let numPlayers = 1;
+        let p1Score = 0;
+        let p2Score = 0;
+        let level = 1;
+        let playerHealth = 500;
+        let maxPlayerHealth = 500;
+        let aliens = [];
+        let alienBullets = [];
+        let powerups = [];
+        let particles = [];
+        let frameCount = 0;
+        let aliensToSpawn = 0;
+        let aliensKilledThisLevel = 0;
+        let levelTransition = false;
 
-        class Boss {
-            constructor() {
-                this.x = width / 2;
-                this.y = height / 2;
-                this.size = 150;
-                this.maxHealth = 200;
-                this.health = 200;
-                this.angle = 0;
-                this.floatOffset = 0;
+        // Turn-based 2P mode
+        let currentTurn = 1;           // 1 or 2
+        let turnTimeRemaining = 45;    // Seconds
+        let gamePhase = 'menu';        // menu, ready, countdown, playing, scoreReveal, winner
+        let turnTimerInterval = null;
+        const TURN_DURATION = 5;      // Seconds per turn (Testing)
+
+        // Combo System
+        let comboCount = 0;
+
+        // Power-up States
+        let shieldCount = 0;
+        let rapidFireTimer = 0;
+
+        // Level Config
+        const levelConfigs = [
+            { aliens: 10, shootInterval: 120, speed: 0.8 }, // Level 1: Easy
+            { aliens: 15, shootInterval: 100, speed: 1.0 }, // Level 2: Normal
+            { aliens: 20, shootInterval: 80, speed: 1.2 },  // Level 3: Hard
+        ];
+
+        // Alien Class
+        class Alien {
+            constructor(type = 'normal', zone = 'any') {
+                this.id = Math.random().toString(36).substr(2, 9); // Unique ID
+                this.zone = zone; // 'left', 'right', or 'any'
+                // Set X position based on zone
+                if (zone === 'left') {
+                    this.x = Math.random() * (width / 2 - 150) + 50;
+                } else if (zone === 'right') {
+                    this.x = Math.random() * (width / 2 - 150) + width / 2 + 50;
+                } else {
+                    this.x = Math.random() * (width - 100) + 50;
+                }
+                this.y = Math.random() * (height * 0.4) + 50;
+                this.type = type; // normal, healer, boss
+                this.size = type === 'boss' ? 100 : (type === 'healer' ? 50 : 60);
+                this.health = type === 'boss' ? 5 : (type === 'healer' ? 1 : 2);
+                this.hue = type === 'healer' ? 120 : (type === 'boss' ? 0 : Math.random() * 360);
+                this.shootTimer = Math.random() * 60;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.popUpProgress = 0;
+                this.state = 'appearing';
+                this.direction = Math.random() > 0.5 ? 1 : -1;
+                this.scoreValue = type === 'boss' ? 500 : (type === 'healer' ? 150 : 100);
             }
 
             update() {
-                this.floatOffset += 0.05;
-                this.y = (height / 2) + Math.sin(this.floatOffset) * 20;
+                const config = levelConfigs[Math.min(level - 1, levelConfigs.length - 1)];
 
-                // Spawn weak points periodically
-                if (Math.random() < 0.03 && weakPoints.length < 3) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const dist = this.size * 0.8; // On the surface
-                    weakPoints.push({
-                        offsetX: Math.cos(angle) * dist,
-                        offsetY: Math.sin(angle) * dist,
-                        life: 100,
-                        maxLife: 100
+                if (this.state === 'appearing') {
+                    this.popUpProgress += 0.05;
+                    if (this.popUpProgress >= 1) {
+                        this.popUpProgress = 1;
+                        this.state = 'active';
+                    }
+                }
+
+                if (this.state === 'active') {
+                    this.wobble += 0.05;
+                    this.x += Math.sin(this.wobble) * 2 * config.speed;
+                    if (this.type === 'boss') {
+                        this.y += Math.cos(this.wobble * 0.5) * 1;
+                    }
+
+                    if (this.x < 50) this.x = 50;
+                    if (this.x > width - 50) this.x = width - 50;
+                    if (this.y < 50) this.y = 50;
+                    if (this.y > height * 0.5) this.y = height * 0.5;
+
+                    this.shootTimer--;
+                    if (this.shootTimer <= 0 && !practiceMode && this.type !== 'healer') {
+                        this.shoot();
+                        const interval = this.type === 'boss' ? config.shootInterval * 0.5 : config.shootInterval;
+                        this.shootTimer = interval + Math.random() * 30;
+                    }
+                }
+            }
+
+            shoot() {
+                const bullets = this.type === 'boss' ? 3 : 1;
+                for (let i = 0; i < bullets; i++) {
+                    alienBullets.push({
+                        parentId: this.id, // Link bullet to parent alien
+                        x: this.x + (i - 1) * 30,
+                        y: this.y + this.size / 2,
+                        startY: this.y + this.size / 2,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: 3 + Math.random() * 2,
+                        baseSize: 8,
+                        color: this.type === 'boss' ? '#FF00FF' : '#FF5252'
                     });
                 }
             }
 
             draw() {
+                if (this.state === 'dead') return;
+
                 ctx.save();
                 ctx.translate(this.x, this.y);
+                const scale = this.popUpProgress;
+                ctx.scale(scale, scale);
 
-                // Main Body
-                ctx.fillStyle = '#7B1FA2';
+                // Glow for special types
+                if (this.type === 'healer') {
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#00FF00';
+                } else if (this.type === 'boss') {
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = '#FF0000';
+                }
+
+                // Body
+                ctx.fillStyle = `hsl(${this.hue}, 70%, 50%)`;
                 ctx.beginPath();
-                ctx.ellipse(0, 0, this.size, this.size * 1, 0, 0, Math.PI * 2);
+                ctx.ellipse(0, 0, this.size / 2, this.size / 2 * 0.8, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Eyes
+                const eyeOff = Math.sin(frameCount * 0.2) * 3;
+                this.drawEye(-15 + eyeOff, -10, this.type === 'boss' ? 15 : 12);
+                this.drawEye(15 - eyeOff, -10, this.type === 'boss' ? 15 : 12);
+
+                // Mouth
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(0, 10, this.type === 'boss' ? 12 : 8, 0, Math.PI);
                 ctx.fill();
 
-                // Cockpit
+                // Healer cross
+                if (this.type === 'healer') {
+                    ctx.fillStyle = '#FFF';
+                    ctx.fillRect(-5, -25, 10, 20);
+                    ctx.fillRect(-10, -20, 20, 10);
+                }
+
+                // Boss crown
+                if (this.type === 'boss') {
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.moveTo(-30, -40);
+                    ctx.lineTo(-20, -55);
+                    ctx.lineTo(-10, -45);
+                    ctx.lineTo(0, -60);
+                    ctx.lineTo(10, -45);
+                    ctx.lineTo(20, -55);
+                    ctx.lineTo(30, -40);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // Gun
+                ctx.fillStyle = '#4A148C';
+                ctx.save();
+                ctx.translate(this.direction * 30, 15);
+                ctx.rotate(this.direction * 0.5);
+                ctx.fillRect(-5, -5, 30, 15);
                 ctx.fillStyle = '#00E676';
                 ctx.beginPath();
-                ctx.arc(0, -20, 60, 0, Math.PI * 2);
+                ctx.arc(25, 0, 8, 0, Math.PI * 2);
                 ctx.fill();
-
-                // Eyes (Boss Face)
-                ctx.fillStyle = '#000';
-                ctx.beginPath(); ctx.ellipse(-20, -20, 10, 20, 0, 0, Math.PI * 2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(20, -20, 10, 20, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
 
                 ctx.restore();
             }
+
+            drawEye(x, y, size) {
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = this.type === 'boss' ? '#F00' : '#000';
+                ctx.beginPath();
+                ctx.arc(x + Math.sin(frameCount * 0.1) * 3, y, size / 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            hit(dmg) {
+                this.health -= dmg;
+                if (this.health <= 0) {
+                    this.state = 'dead';
+                    return true;
+                }
+                return false;
+            }
         }
 
-        function spawnLaser(x, y) {
-            lasers.push({ x: x, y: y, life: 10 });
+        // Power-up Class
+        class Powerup {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                // Make bomb rarer: shield (30%), rapid (30%), health (30%), bomb (10%)
+                const r = Math.random();
+                if (r < 0.3) this.type = 'shield';
+                else if (r < 0.6) this.type = 'rapid';
+                else if (r < 0.9) this.type = 'health';
+                else this.type = 'bomb';
 
-            let hit = false;
+                this.size = 30;
+                this.life = 300; // 5 seconds
+                this.bobble = 0;
+                this.spawnTime = Date.now(); // Track spawn time
+            }
 
-            for (let i = weakPoints.length - 1; i >= 0; i--) {
-                let wp = weakPoints[i];
-                let wx = boss.x + wp.offsetX;
-                let wy = boss.y + wp.offsetY;
+            update() {
+                this.life--;
+                this.bobble += 0.1;
+                this.y += Math.sin(this.bobble) * 0.5;
+            }
 
-                let dist = Math.hypot(x - wx, y - wy);
-                if (dist < 30) {
-                    hit = true;
-                    boss.health -= 5;
-                    score++;
-                    document.getElementById('score').textContent = score;
-                    createParticles(wx, wy, '#FFF');
-                    weakPoints.splice(i, 1);
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.bobble * 0.5);
 
-                    const pct = (boss.health / boss.maxHealth) * 100;
-                    document.getElementById('healthBar').style.width = pct + '%';
+                // Glow
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = this.getColor();
 
-                    if (boss.health <= 0) endGame(true);
-                    return;
+                // Box
+                ctx.fillStyle = this.getColor();
+                ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+
+                // Icon
+                ctx.font = 'bold 24px Fredoka';
+                ctx.fillStyle = '#FFF';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.getIcon(), 0, 0);
+
+                ctx.restore();
+            }
+
+            getColor() {
+                switch (this.type) {
+                    case 'shield': return '#3B82F6';
+                    case 'rapid': return '#EF4444';
+                    case 'bomb': return '#F97316';
+                    case 'health': return '#22C55E';
                 }
             }
 
-            if (!hit) {
-                let dist = Math.hypot(x - boss.x, y - boss.y);
-                if (dist < boss.size) {
-                    createParticles(x, y, '#E040FB');
+            getIcon() {
+                switch (this.type) {
+                    case 'shield': return '🛡️';
+                    case 'rapid': return '⚡';
+                    case 'bomb': return '💣';
+                    case 'health': return '❤️';
                 }
             }
         }
 
-        function createParticles(x, y, color) {
-            for (let i = 0; i < 10; i++) {
-                particles.push({
-                    x: x, y: y,
-                    vx: (Math.random() - 0.5) * 10,
-                    vy: (Math.random() - 0.5) * 10,
-                    life: 1.0,
-                    color: color
-                });
+        // Particle
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 15;
+                this.vy = (Math.random() - 0.5) * 15;
+                this.life = 1;
+                this.color = color;
+                this.size = Math.random() * 8 + 4;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.05;
+                this.vy += 0.3;
+            }
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
             }
         }
 
-        function startGame() {
-            score = 0;
-            timeLeft = 90;
-            boss = new Boss();
-            weakPoints = [];
-            lasers = [];
-            particles = [];
-            gameRunning = true;
-            document.getElementById('score').textContent = 0;
-            document.getElementById('timer').textContent = 60;
-            document.getElementById('healthBar').style.width = '100%';
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('endScreen').classList.add('hidden');
+        // Start Functions
+        function startPractice() {
+            practiceMode = true;
+            numPlayers = 1;
+            level = 1;
+            playerHealth = maxPlayerHealth;
+            shieldCount = 0;
+            rapidFireTimer = 0;
+            document.getElementById('mainMenu').classList.add('hidden');
+            startCountdown();
+        }
 
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                document.getElementById('timer').textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    endGame(false);
+        function startGame(players) {
+            practiceMode = false;
+            numPlayers = players;
+            level = 1;
+            playerHealth = maxPlayerHealth;
+            p1Health = maxPlayerHealth;
+            p2Health = maxPlayerHealth;
+            shieldCount = 0;
+            rapidFireTimer = 0;
+
+            document.getElementById('mainMenu').classList.add('hidden');
+
+            if (players === 2) {
+                // Initialize 2-player turn-based mode
+                currentTurn = 1;
+                p1Score = 0;
+                p2Score = 0;
+                gamePhase = 'ready';
+                // Reset HUD for P1 first
+                document.getElementById('p1ScoreBox').classList.remove('hidden');
+                document.getElementById('p2ScoreBox').classList.add('hidden'); // Hide P2 score initially
+                document.getElementById('turnTimerBox').classList.add('hidden'); // No timer anymore
+                startReadySequence();
+            } else {
+                // Single player standard start
+                p1Score = 0;
+                document.getElementById('p2ScoreBox').classList.add('hidden');
+                document.getElementById('turnTimerBox').classList.add('hidden');
+                startCountdown();
+            }
+        }
+
+        function startReadySequence() {
+            const screen = document.getElementById('playerReadyScreen');
+            const text = document.getElementById('playerReadyText');
+            const icon = document.getElementById('playerReadyIcon');
+
+            screen.classList.remove('hidden');
+
+            if (currentTurn === 1) {
+                text.textContent = "PLAYER 1 READY?";
+                text.className = "text-5xl md:text-7xl font-bold text-cyan-400 drop-shadow-[0_6px_0_#000] mb-4 pulse-text";
+                icon.textContent = "👤";
+            } else {
+                text.textContent = "PLAYER 2 READY?";
+                text.className = "text-5xl md:text-7xl font-bold text-orange-400 drop-shadow-[0_6px_0_#000] mb-4 pulse-text";
+                icon.textContent = "👤";
+            }
+
+            setTimeout(() => {
+                screen.classList.add('hidden');
+                startTurnCountdown();
+            }, 2000);
+        }
+
+        function startTurnCountdown() {
+            const countEl = document.getElementById('countdown');
+            const textEl = document.getElementById('countdownText');
+            countEl.classList.remove('hidden');
+
+            let count = 3;
+            textEl.textContent = count;
+
+            const intv = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    textEl.textContent = count;
+                } else if (count === 0) {
+                    textEl.textContent = "GO!!!";
+                } else {
+                    clearInterval(intv);
+                    countEl.classList.add('hidden');
+                    startTurn();
                 }
             }, 1000);
+        }
+
+        function startTurn() {
+            gamePhase = 'playing';
+            level = 1; // Always start turn at Level 1
+
+            // Show correct score box for current player
+            if (currentTurn === 1) {
+                document.getElementById('p1ScoreBox').classList.remove('hidden');
+                document.getElementById('p2ScoreBox').classList.add('hidden');
+            } else {
+                document.getElementById('p1ScoreBox').classList.add('hidden');
+                document.getElementById('p2ScoreBox').classList.remove('hidden');
+            }
+
+            // Reset level state for the turn
+            initLevel();
+
+            // No timer interval needed anymore
+        }
+
+        function endTurn() {
+            gameRunning = false;
+            gamePhase = 'scoreReveal';
+
+            // Show score reveal
+            const revealScreen = document.getElementById('scoreRevealScreen');
+            const revealTitle = document.getElementById('scoreRevealTitle');
+            const revealNum = document.getElementById('scoreRevealNumber');
+
+            revealScreen.classList.remove('hidden');
+
+            if (currentTurn === 1) {
+                revealTitle.textContent = "PLAYER 1 FINISHED";
+                revealTitle.className = "text-4xl md:text-5xl font-bold text-cyan-400 drop-shadow-[0_4px_0_#000] mb-4";
+                revealNum.textContent = "Score: " + p1Score;
+            } else {
+                revealTitle.textContent = "PLAYER 2 FINISHED";
+                revealTitle.className = "text-4xl md:text-5xl font-bold text-orange-400 drop-shadow-[0_4px_0_#000] mb-4";
+                revealNum.textContent = "Score: " + p2Score;
+            }
+
+            // Click input handler will close this screen and proceed
+            revealScreen.onclick = () => {
+                revealScreen.onclick = null;
+                revealScreen.classList.add('hidden');
+
+                if (currentTurn === 1) {
+                    currentTurn = 2;
+                    startReadySequence();
+                } else {
+                    showWinner();
+                }
+            };
+        }
+
+        function showWinner() {
+            gamePhase = 'winner';
+            const winScreen = document.getElementById('winnerScreen');
+            const winTitle = document.getElementById('winnerTitle');
+            const p1ScoreEl = document.getElementById('winnerP1Score');
+            const p2ScoreEl = document.getElementById('winnerP2Score');
+
+            winScreen.classList.remove('hidden');
+            p1ScoreEl.textContent = p1Score;
+            p2ScoreEl.textContent = p2Score;
+
+            if (p1Score > p2Score) {
+                winTitle.textContent = "PLAYER 1 WINS!";
+                winTitle.className = "text-5xl md:text-7xl font-bold text-cyan-400 drop-shadow-[0_6px_0_#000] mb-4 winner-bounce";
+            } else if (p2Score > p1Score) {
+                winTitle.textContent = "PLAYER 2 WINS!";
+                winTitle.className = "text-5xl md:text-7xl font-bold text-orange-400 drop-shadow-[0_6px_0_#000] mb-4 winner-bounce";
+            } else {
+                winTitle.textContent = "IT'S A DRAW!";
+                winTitle.className = "text-5xl md:text-7xl font-bold text-white drop-shadow-[0_6px_0_#000] mb-4 winner-bounce";
+            }
+        }
+
+        function rematch() {
+            document.getElementById('winnerScreen').classList.add('hidden');
+            startGame(2);
+        }
+
+        function returnToMainMenu() {
+            window.location.href = '../';
+        }
+
+        function returnToGameMenu() {
+            // Stop any active countdown and turn timer
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            // If already on main menu, go to homepage
+            if (!document.getElementById('mainMenu').classList.contains('hidden')) {
+                window.location.href = '../';
+                return;
+            }
+
+            // Otherwise stop game and return to game's main menu
+            gameRunning = false;
+            p1Score = 0;
+            p2Score = 0;
+            level = 1;
+            playerHealth = maxPlayerHealth;
+            p1Health = maxPlayerHealth;
+            p2Health = maxPlayerHealth;
+            p1Combo = 0;
+            p2Combo = 0;
+            leftSpawnCount = 0;
+            rightSpawnCount = 0;
+            shieldCount = 0;
+            rapidFireTimer = 0;
+            aliens = [];
+            alienBullets = [];
+            powerups = [];
+            particles = [];
+
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('countdown').classList.add('hidden');
+            document.getElementById('endScreen').classList.add('hidden');
+            document.getElementById('p2ScoreBox').classList.add('hidden');
+            document.getElementById('p1ComboBox').classList.add('hidden');
+            document.getElementById('p2ComboBox').classList.add('hidden');
+            document.getElementById('mainMenu').classList.remove('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden'); // Ensure game over is hidden
+            document.getElementById('winnerScreen').classList.add('hidden'); // Ensure winner screen is hidden
+        }
+
+        let countdownInterval;
+
+        function startCountdown() {
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            let count = 3;
+            const countEl = document.getElementById('countdown');
+            const textEl = document.getElementById('countdownText');
+            countEl.classList.remove('hidden');
+            textEl.textContent = count;
+
+            countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    textEl.textContent = count;
+                } else if (count === 0) {
+                    textEl.textContent = "GO!!!";
+                } else {
+                    clearInterval(countdownInterval);
+                    countEl.classList.add('hidden');
+                    initLevel();
+                }
+            }, 1000);
+        }
+
+        function initLevel() {
+            const config = levelConfigs[Math.min(level - 1, levelConfigs.length - 1)];
+            console.log("Starting Level " + level + " with " + config.aliens + " aliens");
+
+            aliensToSpawn = config.aliens;
+            aliensKilledThisLevel = 0;
+            // Removed spawn counters since we no longer use zone-based spawning
+            aliens = [];
+            alienBullets = [];
+            powerups = [];
+            levelTransition = false;
+
+            // Spawn initial aliens
+            for (let i = 0; i < Math.min(5, aliensToSpawn); i++) {
+                spawnAlien();
+            }
+
+            gameRunning = true;
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('p1Score').textContent = p1Score;
+            document.getElementById('p2Score').textContent = p2Score;
+            document.getElementById('level').textContent = level;
+            updateHealthBar();
+            updatePowerupUI();
 
             requestAnimationFrame(loop);
         }
 
-        function endGame(victory) {
-            gameRunning = false;
-            if (timerInterval) clearInterval(timerInterval);
-            document.getElementById('endTitle').textContent = victory ? "VICTORY!" : "TIME'S UP!";
-            document.getElementById('endScreen').classList.remove('hidden');
+        function spawnAlien() {
+            if (aliensToSpawn <= 0) return;
+
+            let type = 'normal';
+            const r = Math.random();
+            if (r > 0.95 && level >= 3) type = 'boss';
+            else if (r > 0.85) type = 'healer';
+
+            // In turn-based mode, aliens spawn anywhere (zone 'any')
+            aliens.push(new Alien(type, 'any'));
+            aliensToSpawn--;
         }
 
-        canvas.addEventListener('mousedown', (e) => {
-            if (!gameRunning) return;
-            const r = canvas.getBoundingClientRect();
-            spawnLaser(e.clientX - r.left, e.clientY - r.top);
-        });
+        function nextLevel() {
+            levelTransition = true;
 
-        canvas.addEventListener('touchstart', (e) => {
-            if (!gameRunning) return;
-            e.preventDefault();
-            const r = canvas.getBoundingClientRect();
-            spawnLaser(e.touches[0].clientX - r.left, e.touches[0].clientY - r.top);
-        });
+            // Check if player completed Level 3 in 2-player mode (Levels are 1, 2, 3)
+            // If we just finished level 3, we should end turn.
+            // But wait, level variable is still 3 here.
 
-        function loop() {
-            if (!gameRunning) return;
-            ctx.clearRect(0, 0, width, height);
+            // Logic:
+            // 1. Level 1 finished -> level becomes 2
+            // 2. Level 2 finished -> level becomes 3
+            // 3. Level 3 finished -> END TURN
 
-            boss.update();
-            boss.draw();
-
-            weakPoints.forEach(wp => {
-                let wx = boss.x + wp.offsetX;
-                let wy = boss.y + wp.offsetY;
-
-                ctx.shadowBlur = 20;
-                ctx.shadowColor = '#FFEB3B';
-                ctx.fillStyle = '#FFEB3B';
-                ctx.beginPath(); ctx.arc(wx, wy, 20, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = '#F44336';
-                ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.arc(wx, wy, 15, 0, Math.PI * 2); ctx.stroke();
-                ctx.shadowBlur = 0;
-            });
-
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.life -= 0.05;
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
-                ctx.globalAlpha = 1;
-                if (p.life <= 0) particles.splice(i, 1);
+            if (numPlayers === 2 && level >= 3) {
+                setTimeout(() => {
+                    endTurn();
+                }, 1000);
+                return;
             }
 
-            for (let i = lasers.length - 1; i >= 0; i--) {
-                let l = lasers[i];
-                l.life--;
-                ctx.fillStyle = '#00E5FF';
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#00E5FF';
-                ctx.beginPath(); ctx.arc(l.x, l.y, 10, 0, Math.PI * 2); ctx.fill();
+            showLevelText();
+            setTimeout(() => {
+                level++;
+                initLevel();
+            }, 2000);
+        }
+
+        function updateHealthBar() {
+            const healthLabel = document.getElementById('healthTitle'); // We need to add this ID in HTML
+            const singleContainer = document.getElementById('singleHealthContainer');
+            const bar = document.getElementById('healthBar');
+
+            if (numPlayers === 1) {
+                // Single player
+                singleContainer.classList.remove('hidden');
+                document.getElementById('p1HealthContainer').classList.add('hidden');
+                document.getElementById('p2HealthContainer').classList.add('hidden');
+
+                if (healthLabel) healthLabel.textContent = "TEAM HEALTH";
+
+                const pct = (playerHealth / maxPlayerHealth) * 100;
+                bar.style.width = pct + '%';
+                if (pct < 30) {
+                    bar.classList.remove('bg-pandan');
+                    bar.classList.add('bg-sambal');
+                } else {
+                    bar.classList.remove('bg-sambal');
+                    bar.classList.add('bg-pandan');
+                }
+            } else {
+                // 2-player mode - REUSED CENTERED CONTAINER
+                singleContainer.classList.remove('hidden');
+                document.getElementById('p1HealthContainer').classList.add('hidden');
+                document.getElementById('p2HealthContainer').classList.add('hidden');
+
+                if (currentTurn === 1) {
+                    if (healthLabel) {
+                        healthLabel.textContent = "PLAYER 1 HEALTH";
+                        healthLabel.className = "text-cyan-400 font-bold text-center mb-2 drop-shadow-[0_2px_0_#000]";
+                    }
+                    const p1Pct = (p1Health / maxPlayerHealth) * 100;
+                    bar.style.width = p1Pct + '%';
+
+                    bar.className = "w-full h-full transition-all duration-200"; // Reset classes
+                    if (p1Pct < 30) bar.classList.add('bg-red-500');
+                    else bar.classList.add('bg-cyan-400');
+
+                } else {
+                    if (healthLabel) {
+                        healthLabel.textContent = "PLAYER 2 HEALTH";
+                        healthLabel.className = "text-orange-400 font-bold text-center mb-2 drop-shadow-[0_2px_0_#000]";
+                    }
+                    const p2Pct = (p2Health / maxPlayerHealth) * 100;
+                    bar.style.width = p2Pct + '%';
+
+                    bar.className = "w-full h-full transition-all duration-200"; // Reset classes
+                    if (p2Pct < 30) bar.classList.add('bg-red-500');
+                    else bar.classList.add('bg-orange-400');
+                }
+            }
+        }
+
+        function updatePowerupUI() {
+            document.getElementById('shieldStatus').classList.toggle('hidden', shieldCount <= 0);
+            document.getElementById('shieldCount').textContent = shieldCount;
+            document.getElementById('rapidStatus').classList.toggle('hidden', rapidFireTimer <= 0);
+        }
+
+        function updateComboUI() {
+            // P1 combo display
+            const p1Box = document.getElementById('p1ComboBox');
+            if (p1Combo >= 2) {
+                p1Box.classList.remove('hidden');
+                document.getElementById('p1ComboCount').textContent = p1Combo;
+            } else {
+                p1Box.classList.add('hidden');
+            }
+
+            // P2 combo display (only in 2-player mode)
+            const p2Box = document.getElementById('p2ComboBox');
+            if (numPlayers === 2 && p2Combo >= 2) {
+                p2Box.classList.remove('hidden');
+                document.getElementById('p2ComboCount').textContent = p2Combo;
+            } else {
+                p2Box.classList.add('hidden');
+            }
+        }
+
+        function createExplosion(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function showHitMarker(x, y, player) {
+            const marker = document.createElement('div');
+            marker.className = 'hit-marker';
+            marker.textContent = '✕';
+            marker.style.left = x + 'px';
+            marker.style.top = y + 'px';
+            marker.style.color = player === 1 ? '#0FF' : '#FFA500';
+            document.body.appendChild(marker);
+            setTimeout(() => marker.remove(), 300);
+        }
+
+        function showComboText(combo, player) {
+            const text = document.createElement('div');
+            text.className = 'combo-text';
+            text.textContent = `${combo}x COMBO!`;
+            // Position based on player zone
+            if (numPlayers === 2) {
+                text.style.left = player === 1 ? '25%' : '75%';
+            } else {
+                text.style.left = '50%';
+            }
+            text.style.top = '40%';
+            text.style.transform = 'translateX(-50%)';
+            text.style.color = player === 1 ? '#0FF' : '#FFA500';
+            document.body.appendChild(text);
+            setTimeout(() => text.remove(), 1000);
+        }
+
+        function addCombo(player) {
+            // Track combo separately for each player
+            if (player === 1) {
+                p1Combo++;
+                updateComboUI();
+
+                // Bonus points for P1 combos
+                let bonus = 0;
+                if (p1Combo === 3) bonus = 50;
+                else if (p1Combo === 5) { bonus = 100; showComboText(5, 1); }
+                else if (p1Combo === 10) { bonus = 300; showComboText(10, 1); }
+                else if (p1Combo >= 15) { bonus = 500; showComboText(p1Combo, 1); }
+
+                if (bonus > 0) p1Score += bonus;
+            } else {
+                p2Combo++;
+                updateComboUI();
+
+                // Bonus points for P2 combos
+                let bonus = 0;
+                if (p2Combo === 3) bonus = 50;
+                else if (p2Combo === 5) { bonus = 100; showComboText(5, 2); }
+                else if (p2Combo === 10) { bonus = 300; showComboText(10, 2); }
+                else if (p2Combo >= 15) { bonus = 500; showComboText(p2Combo, 2); }
+
+                if (bonus > 0) p2Score += bonus;
+            }
+        }
+
+        // Reset combo when player misses a shot
+        function resetCombo(player) {
+            if (player === 1) {
+                p1Combo = 0;
+            } else {
+                p2Combo = 0;
+            }
+            updateComboUI();
+        }
+
+        function collectPowerup(powerup) {
+            const overlay = document.getElementById('flashOverlay');
+            overlay.classList.add('powerup-flash');
+            setTimeout(() => overlay.classList.remove('powerup-flash'), 300);
+
+            switch (powerup.type) {
+                case 'shield':
+                    shieldCount += 3;
+                    break;
+                case 'rapid':
+                    rapidFireTimer = 600; // 10 seconds
+                    break;
+                case 'bomb':
+                    // Kill all aliens and add score
+                    aliens.forEach(a => {
+                        createExplosion(a.x, a.y, '#FFA500');
+                        p1Score += a.scoreValue;
+                        aliensKilledThisLevel++;
+                    });
+                    aliens = [];
+                    alienBullets = []; // Clear all enemy bullets too
+                    document.getElementById('p1Score').textContent = p1Score;
+
+                    // Check if level should advance
+                    if (aliensToSpawn <= 0 && !levelTransition) {
+                        setTimeout(() => nextLevel(), 500);
+                    } else if (aliensToSpawn > 0) {
+                        // Spawn more aliens if available
+                        for (let i = 0; i < Math.min(5, aliensToSpawn); i++) {
+                            spawnAlien();
+                        }
+                    }
+                    break;
+                case 'health':
+                    playerHealth = Math.min(maxPlayerHealth, playerHealth + 20);
+                    updateHealthBar();
+                    break;
+            }
+            updatePowerupUI();
+        }
+
+        function damagePlayer(amount, player = 1) {
+            if (practiceMode) return;
+
+            // Shield blocks damage
+            if (shieldCount > 0) {
+                shieldCount--;
+                updatePowerupUI();
+                return;
+            }
+
+            // Damage current player's health
+            playerHealth -= amount;
+
+            updateHealthBar();
+
+            const overlay = document.getElementById('flashOverlay');
+            overlay.classList.add('damage-flash');
+            setTimeout(() => overlay.classList.remove('damage-flash'), 200);
+
+            // Check for death/turn end
+            if (playerHealth <= 0) {
+                if (numPlayers === 1) {
+                    gameOver(false);
+                } else {
+                    // In 2P turn-based, death ends the turn immediately
+                    endTurn();
+                }
+            }
+        }
+
+        function gameOver(victory) {
+            gameRunning = false;
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('endScreen').classList.remove('hidden');
+            document.getElementById('finalP1').textContent = p1Score;
+            document.getElementById('finalP2').textContent = p2Score;
+
+            if (numPlayers === 2) {
+                document.getElementById('finalP2Box').classList.remove('hidden');
+            }
+
+            const title = document.getElementById('endTitle');
+            if (victory) {
+                title.textContent = "VICTORY!";
+                title.classList.remove('text-sambal');
+                title.classList.add('text-pandan');
+            } else {
+                title.textContent = "GAME OVER";
+                title.classList.remove('text-pandan');
+                title.classList.add('text-sambal');
+            }
+        }
+
+        function nextLevel() {
+            level++;
+            if (level > 5) {
+                gameOver(true);
+            } else {
+                document.getElementById('level').textContent = level;
+                levelTransition = true;
+                setTimeout(() => {
+                    const config = levelConfigs[Math.min(level - 1, levelConfigs.length - 1)];
+                    aliensToSpawn = config.aliens;
+                    aliensKilledThisLevel = 0;
+
+                    for (let i = 0; i < Math.min(5, aliensToSpawn); i++) {
+                        spawnAlien();
+                    }
+                    levelTransition = false;
+                }, 1500);
+            }
+        }
+
+        // Input
+        function handleShoot(e) {
+            if (!gameRunning) return;
+            e.preventDefault();
+
+            // Handle clicking on score reveal screen to skip
+            if (gamePhase === 'scoreReveal') {
+                const revealScreen = document.getElementById('scoreRevealScreen');
+                if (revealScreen.onclick) revealScreen.onclick();
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = cx - rect.left;
+            const y = cy - rect.top;
+
+            // In turn-based mode, the active player is always currentTurn
+            const player = numPlayers === 2 ? currentTurn : 1;
+
+            // Muzzle flash
+            const flashColor = player === 1 ? '#0FF' : '#FFA500';
+            createExplosion(x, y, flashColor);
+
+            const damage = rapidFireTimer > 0 ? 2 : 1;
+
+            // Check powerups first
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const p = powerups[i];
+                // Don't collect powerups that just spawned (prevent accidental double-click)
+                if (Date.now() - p.spawnTime < 500) continue;
+
+                const dist = Math.hypot(x - p.x, y - p.y);
+                if (dist < p.size + 20) {
+                    collectPowerup(p);
+                    powerups.splice(i, 1);
+                    return;
+                }
+            }
+
+            // Check hit on aliens
+            let hitAnything = false;
+            for (let i = aliens.length - 1; i >= 0; i--) {
+                const a = aliens[i];
+                if (a.state === 'dead') continue;
+
+                const dist = Math.hypot(x - a.x, y - a.y);
+                if (dist < a.size) {
+                    hitAnything = true;
+                    const killed = a.hit(damage);
+                    showHitMarker(cx, cy, player);
+                    createExplosion(a.x, a.y, '#FFF');
+
+                    if (killed) {
+                        const pts = a.scoreValue;
+                        if (player === 1) p1Score += pts;
+                        else p2Score += pts;
+
+                        document.getElementById('p1Score').textContent = p1Score;
+                        document.getElementById('p2Score').textContent = p2Score;
+
+                        // Update winner screen score displays too, just in case
+                        document.getElementById('winnerP1Score').textContent = p1Score;
+                        document.getElementById('winnerP2Score').textContent = p2Score;
+
+                        createExplosion(a.x, a.y, `hsl(${a.hue}, 70%, 50%)`);
+
+                        // Healer bonus - heal current player
+                        if (a.type === 'healer') {
+                            playerHealth = Math.min(maxPlayerHealth, playerHealth + 10);
+                            updateHealthBar();
+                        }
+
+                        // Drop powerup chance
+                        if (Math.random() < 0.15) {
+                            powerups.push(new Powerup(a.x, a.y));
+                        }
+
+                        // Remove all bullets fired by this alien
+                        for (let b = alienBullets.length - 1; b >= 0; b--) {
+                            if (alienBullets[b].parentId === a.id) {
+                                createExplosion(alienBullets[b].x, alienBullets[b].y, '#FF5252');
+                                alienBullets.splice(b, 1);
+                            }
+                        }
+
+                        aliens.splice(i, 1);
+                        aliensKilledThisLevel++;
+                        addCombo(player);
+
+                        // Spawn more
+                        if (aliensToSpawn > 0 && aliens.length < 6) {
+                            spawnAlien();
+                        }
+
+                        // Check level complete
+                        if (aliens.length === 0 && aliensToSpawn === 0 && !levelTransition) {
+                            nextLevel();
+                        }
+                    }
+                    return;
+                }
+            }
+
+            // If player missed all aliens, reset their combo
+            if (!hitAnything) {
+                resetCombo(player);
+            }
+        }
+
+
+        canvas.addEventListener('pointerdown', handleShoot);
+
+        // Game Loop
+        function loop() {
+            if (!gameRunning) return;
+
+            frameCount++;
+
+            // Rapid fire timer
+            if (rapidFireTimer > 0) {
+                rapidFireTimer--;
+                updatePowerupUI();
+            }
+
+            // Background
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#0a0a2e');
+            gradient.addColorStop(1, '#1a1a4e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Stars
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 50; i++) {
+                const sx = (i * 137 + frameCount * 0.1) % width;
+                const sy = (i * 97) % height;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 1 + Math.sin(frameCount * 0.05 + i) * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Ground
+            ctx.fillStyle = '#2a5a2a';
+            ctx.fillRect(0, height * 0.75, width, height * 0.25);
+
+            // Buildings
+            ctx.fillStyle = '#333';
+            for (let i = 0; i < 5; i++) {
+                const bx = i * (width / 5) + 50;
+                const bh = 80 + Math.sin(i) * 30;
+                ctx.fillRect(bx, height * 0.75 - bh, 60, bh);
+            }
+
+            // 2 Player Divider Line - REMOVED for turn-based mode
+            // (Code removed)
+
+            // Aliens
+            for (const a of aliens) {
+                a.update();
+                a.draw();
+            }
+
+            // Power-ups
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                powerups[i].update();
+                powerups[i].draw();
+                if (powerups[i].life <= 0) powerups.splice(i, 1);
+            }
+
+            // Alien Bullets
+            for (let i = alienBullets.length - 1; i >= 0; i--) {
+                const b = alienBullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+
+                const progress = (b.y - b.startY) / (height - b.startY);
+                const currentSize = b.baseSize + (progress * 40);
+
+                ctx.fillStyle = b.color;
+                ctx.shadowBlur = 20 + progress * 30;
+                ctx.shadowColor = b.color;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, currentSize, 0, Math.PI * 2);
+                ctx.fill();
                 ctx.shadowBlur = 0;
-                if (l.life <= 0) lasers.splice(i, 1);
+
+                if (b.y > height - 80) {
+                    // Determine which player takes damage based on bullet position
+                    const hitPlayer = b.x < width / 2 ? 1 : 2;
+                    createExplosion(b.x, b.y, '#FF5252');
+                    alienBullets.splice(i, 1);
+                    // ADJUST ALIEN DAMAGE HERE: Change the number 2 to whatever damage you want
+                    damagePlayer(2, numPlayers === 2 ? currentTurn : 1);
+                    continue;
+                }
+
+                if (b.y > height + 50 || b.x < -50 || b.x > width + 50) {
+                    alienBullets.splice(i, 1);
+                }
+            }
+
+            // Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            // Level transition text
+            if (levelTransition) {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 60px Fredoka';
+                ctx.textAlign = 'center';
+                ctx.fillText(`LEVEL ${level}`, width / 2, height / 2);
+            }
+
+            // Practice mode indicator
+            if (practiceMode) {
+                ctx.fillStyle = '#FFD600';
+                ctx.font = 'bold 24px Fredoka';
+                ctx.textAlign = 'center';
+                ctx.fillText('PRACTICE MODE - No Damage', width / 2, 90);
             }
 
             requestAnimationFrame(loop);

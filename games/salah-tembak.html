@@ -1,0 +1,1336 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Salah Tembak! - Aliens vs Malaysians</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 'fredoka': ['Fredoka', 'sans-serif'] },
+                    colors: { 'sambal': '#FF5252', 'durian': '#FFD600', 'pandan': '#00E676' }
+                }
+            }
+        }
+    </script>
+    <style>
+        .target-hit {
+            animation: targetHit 0.4s ease-out forwards;
+        }
+
+        @keyframes targetHit {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.3) rotate(15deg);
+            }
+
+            100% {
+                transform: scale(0) rotate(-30deg);
+                opacity: 0;
+            }
+        }
+
+        .balloon-pop {
+            animation: balloonPop 0.3s ease-out forwards;
+        }
+
+        @keyframes balloonPop {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.5);
+            }
+
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        .wrong-reaction {
+            animation: wrongReaction 0.6s ease-out forwards;
+        }
+
+        @keyframes wrongReaction {
+            0% {
+                transform: scale(1) rotate(0deg);
+            }
+
+            25% {
+                transform: scale(1.1) rotate(-10deg);
+            }
+
+            50% {
+                transform: scale(1.1) rotate(10deg);
+            }
+
+            75% {
+                transform: scale(1.05) rotate(-5deg);
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        .disguise-fall {
+            animation: disguiseFall 0.8s ease-out forwards;
+        }
+
+        @keyframes disguiseFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100px) rotate(45deg);
+                opacity: 0;
+            }
+        }
+
+        .crosshair {
+            pointer-events: none;
+        }
+
+        .winner-bounce {
+            animation: winnerBounce 0.5s ease-out forwards, winnerGlow 1s ease-in-out infinite 0.5s;
+        }
+
+        @keyframes winnerBounce {
+            0% {
+                transform: scale(0) rotate(-10deg);
+            }
+
+            50% {
+                transform: scale(1.3) rotate(5deg);
+            }
+
+            100% {
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes winnerGlow {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 20px gold);
+            }
+
+            50% {
+                filter: drop-shadow(0 0 40px gold) drop-shadow(0 0 60px orange);
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .pulse-text {
+            animation: pulseText 1s ease-in-out infinite;
+        }
+
+        @keyframes pulseText {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.9;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        .muzzle-flash {
+            animation: muzzleFlash 0.1s ease-out forwards;
+        }
+
+        @keyframes muzzleFlash {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="font-fredoka bg-gradient-to-b from-red-600 via-red-500 to-orange-400 min-h-screen overflow-hidden touch-none select-none cursor-crosshair">
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas" class="block w-full h-screen"></canvas>
+
+    <!-- HUD -->
+    <div id="hud" class="hidden fixed inset-0 pointer-events-none z-50">
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 flex gap-4 flex-wrap justify-center">
+            <div
+                class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
+                ⏱️ <span id="timer" class="text-sambal">35</span>s
+            </div>
+            <div id="p1ScoreBox"
+                class="bg-sambal/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg text-white">
+                P1: <span id="p1Score">0</span>
+            </div>
+            <div id="p2ScoreBox"
+                class="hidden bg-orange-500/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg text-white">
+                P2: <span id="p2Score">0</span>
+            </div>
+        </div>
+        <div class="absolute top-16 left-1/2 -translate-x-1/2 flex gap-4">
+            <div id="difficultyBadge" class="bg-pandan px-4 py-1 rounded-full border-2 border-black font-bold text-sm">
+                EASY</div>
+            <div id="accuracyBadge" class="bg-durian px-4 py-1 rounded-full border-2 border-black font-bold text-sm">🎯
+                100%</div>
+        </div>
+    </div>
+
+    <!-- Countdown Overlay -->
+    <div id="countdown"
+        class="hidden fixed inset-0 flex items-center justify-center z-[80] bg-black/70 pointer-events-none">
+        <div id="countdownText" class="text-9xl font-bold text-white drop-shadow-[0_8px_0_#000]">3</div>
+    </div>
+
+    <!-- Main Menu -->
+    <div id="mainMenu"
+        class="fixed inset-0 bg-gradient-to-b from-red-800 to-orange-900 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <div class="text-8xl mb-4 animate-bounce">🎯</div>
+        <h1 class="text-5xl md:text-7xl font-bold text-sambal drop-shadow-[0_6px_0_#000] mb-2">
+            SALAH TEMBAK!
+        </h1>
+        <p class="text-white text-xl mb-2 max-w-md">"Not everything green is alien.<br>Sometimes it's cactus. Sometimes
+            it's balloon."</p>
+        <p class="text-red-300 text-lg mb-6">Shoot the REAL aliens!</p>
+
+        <!-- Difficulty Selection -->
+        <div class="flex gap-2 mb-6">
+            <button onclick="setDifficulty('easy')" id="btnEasy"
+                class="bg-pandan text-black font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] transition-all">EASY</button>
+            <button onclick="setDifficulty('normal')" id="btnNormal"
+                class="bg-durian text-black font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] transition-all opacity-60">NORMAL</button>
+            <button onclick="setDifficulty('hard')" id="btnHard"
+                class="bg-sambal text-white font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] transition-all opacity-60">HARD</button>
+        </div>
+
+        <button onclick="startGame(1)"
+            class="bg-pandan text-black font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all mb-4 w-72">
+            👤 1 PLAYER
+        </button>
+
+        <button onclick="startGame(2)"
+            class="bg-durian text-black font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#B8860B] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#B8860B] transition-all w-72">
+            👥 2 PLAYER (TURN)
+        </button>
+    </div>
+
+    <!-- Player Ready Screen -->
+    <div id="playerReadyScreen"
+        class="hidden fixed inset-0 bg-gradient-to-b from-red-800 to-orange-900 flex flex-col items-center justify-center z-[90] text-center px-4">
+        <div id="playerReadyIcon" class="text-9xl mb-4 pulse-text">🎯</div>
+        <h1 id="playerReadyText"
+            class="text-5xl md:text-7xl font-bold text-sambal drop-shadow-[0_6px_0_#000] mb-4 pulse-text">
+            PLAYER 1 READY?
+        </h1>
+        <p class="text-white text-2xl">Get ready to blast some aliens!</p>
+    </div>
+
+    <!-- Score Reveal Screen -->
+    <div id="scoreRevealScreen"
+        class="hidden fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[95] text-center px-4">
+        <div id="confettiContainer"></div>
+        <h2 id="scoreRevealTitle" class="text-4xl md:text-5xl font-bold text-sambal drop-shadow-[0_4px_0_#000] mb-4">
+            PLAYER 1 SCORED
+        </h2>
+        <div id="scoreRevealNumber" class="text-8xl md:text-9xl font-bold text-durian drop-shadow-[0_8px_0_#000] mb-4">
+            0
+        </div>
+        <div id="accuracyResult" class="text-2xl font-bold text-pandan mb-8">🎯 Accuracy: 100%</div>
+        <p class="text-white text-xl animate-pulse">Tap to continue...</p>
+    </div>
+
+    <!-- Winner Screen -->
+    <div id="winnerScreen"
+        class="hidden fixed inset-0 bg-gradient-to-b from-red-800 via-black to-orange-900 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <div id="winnerConfettiContainer"></div>
+        <div class="text-9xl mb-4 winner-bounce">🏆</div>
+        <h1 id="winnerTitle"
+            class="text-4xl md:text-6xl font-bold text-sambal drop-shadow-[0_6px_0_#000] mb-2 winner-bounce">
+            WHO MORE POWER?
+        </h1>
+        <h2 id="winnerSubtitle" class="text-3xl md:text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000] mb-8"></h2>
+        <div class="flex gap-8 justify-center mb-8">
+            <div class="text-center">
+                <div class="text-sambal font-bold text-2xl">Player 1</div>
+                <div id="winnerP1Score" class="text-5xl font-bold text-white drop-shadow-[0_4px_0_#000]">0</div>
+            </div>
+            <div class="text-6xl font-bold text-white">VS</div>
+            <div class="text-center">
+                <div class="text-orange-400 font-bold text-2xl">Player 2</div>
+                <div id="winnerP2Score" class="text-5xl font-bold text-white drop-shadow-[0_4px_0_#000]">0</div>
+            </div>
+        </div>
+        <div class="flex flex-col gap-4">
+            <button onclick="rematch()"
+                class="bg-pandan text-black font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all">
+                🔥 FIGHT AGAIN!
+            </button>
+            <button onclick="returnToMainMenu()"
+                class="bg-gray-600 text-white font-bold text-xl px-8 py-3 rounded-full border-4 border-black shadow-[0_6px_0_#374151] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_3px_0_#374151] transition-all">
+                🏠 MAIN MENU
+            </button>
+        </div>
+    </div>
+
+    <!-- End Screen (Single Player) -->
+    <div id="endScreen"
+        class="hidden fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <div class="text-8xl mb-4">🎯</div>
+        <h1 class="text-5xl md:text-6xl font-bold text-sambal drop-shadow-[0_4px_0_#000] mb-4">
+            TIME'S UP!
+        </h1>
+        <p class="text-white text-xl mb-2">Final Score:</p>
+        <div id="finalScore" class="text-6xl font-bold text-durian drop-shadow-[0_4px_0_#000] mb-4">0</div>
+        <div id="finalAccuracy" class="text-2xl font-bold text-pandan mb-8">🎯 Accuracy: 100%</div>
+        <button onclick="location.reload()"
+            class="bg-pandan text-black font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all">
+            PLAY AGAIN
+        </button>
+        <button onclick="window.location.href='../'"
+            class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
+            BACK TO HUB
+        </button>
+    </div>
+
+    <!-- Back Button -->
+    <button onclick="handleBackButton()"
+        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2 pointer-events-auto">
+        <span class="text-2xl">🔙</span> MENU
+    </button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Game State
+        let gameRunning = false;
+        let numPlayers = 1;
+        let currentPlayer = 1;
+        let p1Score = 0;
+        let p2Score = 0;
+        let timeRemaining = 35;
+        let gameTimer = null;
+        let difficulty = 'easy';
+        let gamePhase = 'menu';
+
+        // Accuracy tracking
+        let totalShots = 0;
+        let correctShots = 0;
+
+        // Game Objects
+        let targets = [];
+        let muzzleFlashes = [];
+        let particles = [];
+        let popups = [];
+        let frameCount = 0;
+        let mouseX = 0;
+        let mouseY = 0;
+
+        // Asset paths
+        const ASSETS = {
+            alienNormal: '../assets/alien_normal.png',
+            alienHelmet: '../assets/alien_helmet.png',
+            alienHit: '../assets/alien_hit.png',
+            durian: '../assets/durian.png', // Not used but available
+            malaysianMale: '../assets/malaysian_male.png',
+            malaysianFemale: '../assets/malaysian_female.png'
+        };
+
+        // Preload images
+        const images = {};
+        let imagesLoaded = 0;
+
+        Object.entries(ASSETS).forEach(([key, src]) => {
+            const img = new Image();
+            img.onload = () => { imagesLoaded++; };
+            img.onerror = () => { imagesLoaded++; console.log('Asset not found:', src); };
+            img.src = src;
+            images[key] = img;
+        });
+
+        // Difficulty Settings
+        const difficultySettings = {
+            easy: { spawnRate: 70, fakeChance: 0, disguiseChance: 0, time: 60, targetLife: 160 },
+            normal: { spawnRate: 50, fakeChance: 0.3, disguiseChance: 0, time: 60, targetLife: 120 },
+            hard: { spawnRate: 35, fakeChance: 0.5, disguiseChance: 0.3, time: 60, targetLife: 90 }
+        };
+
+        // Fake target types
+        const fakeTypes = ['cardboard', 'balloon', 'poster', 'cactus', 'plant'];
+
+        // Disguise types
+        const disguiseTypes = ['mustache', 'hat', 'wig'];
+
+        function setDifficulty(diff) {
+            difficulty = diff;
+            document.getElementById('btnEasy').classList.toggle('opacity-60', diff !== 'easy');
+            document.getElementById('btnNormal').classList.toggle('opacity-60', diff !== 'normal');
+            document.getElementById('btnHard').classList.toggle('opacity-60', diff !== 'hard');
+        }
+
+        function handleBackButton() {
+            if (gamePhase === 'menu') {
+                window.location.href = '../';
+            } else {
+                returnToMainMenu();
+            }
+        }
+
+        function returnToMainMenu() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            gamePhase = 'menu';
+            document.getElementById('mainMenu').classList.remove('hidden');
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('endScreen').classList.add('hidden');
+            document.getElementById('winnerScreen').classList.add('hidden');
+            document.getElementById('scoreRevealScreen').classList.add('hidden');
+            document.getElementById('playerReadyScreen').classList.add('hidden');
+            targets = [];
+            particles = [];
+            muzzleFlashes = [];
+        }
+
+        // Target Class
+        class Target {
+            constructor() {
+                const settings = difficultySettings[difficulty];
+                this.isReal = Math.random() >= settings.fakeChance;
+                this.fakeType = !this.isReal ? fakeTypes[Math.floor(Math.random() * fakeTypes.length)] : null;
+                this.hasDisguise = this.isReal && Math.random() < settings.disguiseChance;
+                this.disguiseType = this.hasDisguise ? disguiseTypes[Math.floor(Math.random() * disguiseTypes.length)] : null;
+                this.disguiseFalling = false;
+
+                this.size = 200;
+                this.x = Math.random() * (width - 150) + 75;
+                this.y = Math.random() * (height * 0.6) + 80;
+                this.state = 'active';
+                this.animTimer = 0;
+                this.wobble = Math.random() * Math.PI * 2;
+                this.life = settings.targetLife;
+                this.hoverTime = 0;
+                this.hue = this.isReal ? 120 : 0;
+            }
+
+            update() {
+                if (this.state === 'active') {
+                    this.wobble += 0.05;
+                    this.x += Math.sin(this.wobble) * 0.5;
+                    this.y += Math.cos(this.wobble * 0.7) * 0.3;
+
+                    // Keep in bounds
+                    if (this.x < 60) this.x = 60;
+                    if (this.x > width - 60) this.x = width - 60;
+                    if (this.y < 80) this.y = 80;
+                    if (this.y > height * 0.65) this.y = height * 0.65;
+
+                    this.life--;
+                    if (this.life <= 0) return false;
+
+                    // Check if mouse is hovering (for disguise reveal on hard mode)
+                    const dx = mouseX - this.x;
+                    const dy = mouseY - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < this.size && this.hasDisguise && !this.disguiseFalling) {
+                        this.hoverTime++;
+                        if (this.hoverTime > 60) {
+                            this.disguiseFalling = true;
+                        }
+                    } else {
+                        this.hoverTime = Math.max(0, this.hoverTime - 1);
+                    }
+                } else {
+                    this.animTimer++;
+                    if (this.animTimer > 30) return false;
+                }
+                return true;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                if (this.state === 'hit') {
+                    const progress = this.animTimer / 30;
+                    ctx.scale(1 - progress, 1 - progress);
+                    ctx.rotate(progress * Math.PI * 0.5);
+                    ctx.globalAlpha = 1 - progress;
+                } else if (this.state === 'wrong') {
+                    ctx.rotate(Math.sin(this.animTimer * 0.7) * 0.2);
+                }
+
+                if (this.isReal) {
+                    this.drawAlien();
+                    if (this.hasDisguise && !this.disguiseFalling) {
+                        this.drawDisguise();
+                    }
+                } else {
+                    this.drawFakeTarget();
+                }
+
+                ctx.restore();
+
+                // Draw falling disguise separately
+                if (this.disguiseFalling && this.animTimer < 60) {
+                    this.drawFallingDisguise();
+                }
+            }
+
+            drawAlien() {
+                // Try PNG assets
+                let img = images.alienNormal;
+                if (this.state === 'hit') img = images.alienHit;
+
+                if (img && img.complete && img.naturalWidth > 0) {
+                    ctx.drawImage(img, -this.size / 2, -this.size / 2 * 0.85, this.size, this.size * 0.85);
+
+                    // Green skin visible (shows even with disguise)
+                    // We add this extra "skin check" just to be sure the disguise is "bad"
+                    if (this.hasDisguise) {
+                        ctx.fillStyle = '#4CAF50';
+                        ctx.beginPath();
+                        ctx.arc(-25, 5, 8, 0, Math.PI * 2);
+                        ctx.arc(25, 5, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                } else {
+                    this.drawAlienFallback();
+                }
+            }
+
+            drawAlienFallback() {
+                // Body (green for real aliens)
+                ctx.fillStyle = '#4CAF50';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, this.size / 2, this.size / 2 * 0.85, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#2E7D32';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Three eyes (distinctive alien feature)
+                ctx.fillStyle = '#FFF';
+                ctx.beginPath();
+                ctx.arc(-15, -10, 10, 0, Math.PI * 2);
+                ctx.arc(0, -15, 8, 0, Math.PI * 2);
+                ctx.arc(15, -10, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(-15 + Math.sin(frameCount * 0.08) * 2, -10, 4, 0, Math.PI * 2);
+                ctx.arc(0 + Math.sin(frameCount * 0.08) * 2, -15, 3, 0, Math.PI * 2);
+                ctx.arc(15 + Math.sin(frameCount * 0.08) * 2, -10, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Suspicious mouth
+                ctx.strokeStyle = '#2E7D32';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, 10, 10, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+
+                // Small antennae
+                ctx.strokeStyle = '#4CAF50';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(-10, -this.size * 0.4);
+                ctx.lineTo(-15, -this.size * 0.55);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(10, -this.size * 0.4);
+                ctx.lineTo(15, -this.size * 0.55);
+                ctx.stroke();
+
+                // Green skin visible (shows even with disguise)
+                if (this.hasDisguise) {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.beginPath();
+                    ctx.arc(-25, 5, 8, 0, Math.PI * 2);
+                    ctx.arc(25, 5, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            drawDisguise() {
+                if (this.disguiseType === 'mustache') {
+                    ctx.fillStyle = '#5D4037';
+                    ctx.beginPath();
+                    ctx.moveTo(-20, 5);
+                    ctx.quadraticCurveTo(-25, 15, -15, 12);
+                    ctx.quadraticCurveTo(0, 8, 15, 12);
+                    ctx.quadraticCurveTo(25, 15, 20, 5);
+                    ctx.quadraticCurveTo(0, 10, -20, 5);
+                    ctx.fill();
+                } else if (this.disguiseType === 'hat') {
+                    ctx.fillStyle = '#795548';
+                    ctx.beginPath();
+                    ctx.ellipse(0, -this.size * 0.35, 30, 10, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillRect(-15, -this.size * 0.55, 30, 20);
+                } else if (this.disguiseType === 'wig') {
+                    ctx.fillStyle = '#FDD835';
+                    ctx.beginPath();
+                    ctx.moveTo(-30, -10);
+                    ctx.quadraticCurveTo(-35, -40, -10, -35);
+                    ctx.quadraticCurveTo(0, -50, 10, -35);
+                    ctx.quadraticCurveTo(35, -40, 30, -10);
+                    ctx.quadraticCurveTo(25, 5, 20, 0);
+                    ctx.lineTo(-20, 0);
+                    ctx.quadraticCurveTo(-25, 5, -30, -10);
+                    ctx.fill();
+                }
+            }
+
+            drawFallingDisguise() {
+                ctx.save();
+                const progress = this.hoverTime / 60;
+                ctx.translate(this.x, this.y + progress * 80);
+                ctx.rotate(progress * Math.PI * 0.5);
+                ctx.globalAlpha = 1 - progress * 0.5;
+
+                if (this.disguiseType === 'hat') {
+                    ctx.fillStyle = '#795548';
+                    ctx.fillRect(-15, -10, 30, 20);
+                }
+
+                ctx.restore();
+            }
+
+            drawFakeTarget() {
+                if (this.fakeType === 'cardboard') {
+                    // Cardboard alien cutout
+                    ctx.fillStyle = '#D7CCC8';
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, this.size / 2, this.size / 2 * 0.85, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#8D6E63';
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([10, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // Drawn-on face
+                    ctx.strokeStyle = '#5D4037';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(-12, -8, 8, 0, Math.PI * 2);
+                    ctx.arc(12, -8, 8, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(0, 10, 10, 0, Math.PI);
+                    ctx.stroke();
+
+                    // "FAKE" label
+                    ctx.font = 'bold 12px Fredoka';
+                    ctx.fillStyle = '#8D6E63';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('CARDBOARD', 0, this.size * 0.6);
+
+                } else if (this.fakeType === 'balloon') {
+                    // Green balloon
+                    ctx.fillStyle = '#81C784';
+                    ctx.beginPath();
+                    ctx.ellipse(0, -5, this.size * 0.4, this.size * 0.5, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#4CAF50';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Balloon knot
+                    ctx.beginPath();
+                    ctx.moveTo(0, this.size * 0.4);
+                    ctx.lineTo(0, this.size * 0.55);
+                    ctx.stroke();
+
+                    // String
+                    ctx.beginPath();
+                    ctx.moveTo(0, this.size * 0.55);
+                    ctx.quadraticCurveTo(10, this.size * 0.7, 0, this.size * 0.8);
+                    ctx.stroke();
+
+                    // Shine
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                    ctx.beginPath();
+                    ctx.ellipse(-10, -15, 8, 12, -0.3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                } else if (this.fakeType === 'poster') {
+                    // Movie poster with alien
+                    ctx.fillStyle = '#263238';
+                    ctx.fillRect(-25, -35, 50, 70);
+                    ctx.strokeStyle = '#FFF';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(-25, -35, 50, 70);
+
+                    // Alien drawing on poster
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.beginPath();
+                    ctx.arc(0, -10, 15, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Text
+                    ctx.font = 'bold 8px Fredoka';
+                    ctx.fillStyle = '#FFF';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('COMING SOON', 0, 25);
+
+                } else if (this.fakeType === 'cactus') {
+                    // Cactus
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.beginPath();
+                    ctx.roundRect(-12, -30, 24, 60, 10);
+                    ctx.fill();
+
+                    // Arms
+                    ctx.beginPath();
+                    ctx.roundRect(-30, -15, 20, 10, 5);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.roundRect(-30, -28, 10, 18, 5);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.roundRect(10, 0, 20, 10, 5);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.roundRect(20, -15, 10, 18, 5);
+                    ctx.fill();
+
+                    // Spines
+                    ctx.strokeStyle = '#2E7D32';
+                    ctx.lineWidth = 1;
+                    for (let i = 0; i < 8; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(-12 + Math.random() * 24, -25 + i * 7);
+                        ctx.lineTo(-15 + Math.random() * 30, -28 + i * 7);
+                        ctx.stroke();
+                    }
+
+                    // Pot
+                    ctx.fillStyle = '#8D6E63';
+                    ctx.beginPath();
+                    ctx.moveTo(-18, 25);
+                    ctx.lineTo(-15, 40);
+                    ctx.lineTo(15, 40);
+                    ctx.lineTo(18, 25);
+                    ctx.closePath();
+                    ctx.fill();
+
+                } else if (this.fakeType === 'plant') {
+                    // Houseplant
+                    ctx.fillStyle = '#8D6E63';
+                    ctx.beginPath();
+                    ctx.moveTo(-20, 15);
+                    ctx.lineTo(-15, 40);
+                    ctx.lineTo(15, 40);
+                    ctx.lineTo(20, 15);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Leaves
+                    ctx.fillStyle = '#4CAF50';
+                    for (let i = 0; i < 5; i++) {
+                        ctx.save();
+                        ctx.rotate((i - 2) * 0.4);
+                        ctx.beginPath();
+                        ctx.ellipse(0, -25, 8, 25, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                }
+            }
+
+            hit() {
+                this.state = this.isReal ? 'hit' : 'wrong';
+                this.animTimer = 0;
+            }
+        }
+
+        // Muzzle Flash
+        class MuzzleFlash {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = 40;
+                this.life = 6;
+            }
+
+            update() {
+                this.life--;
+                this.size += 5;
+                return this.life > 0;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.globalAlpha = this.life / 6;
+
+                // Flash
+                ctx.fillStyle = '#FFEB3B';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#FF5722';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.size / 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Popup
+        class Popup {
+            constructor(x, y, text, color, isReaction = false) {
+                this.x = x;
+                this.y = y;
+                this.text = text;
+                this.color = color;
+                this.isReaction = isReaction;
+                this.life = isReaction ? 50 : 35;
+            }
+
+            update() {
+                if (!this.isReaction) this.y -= 2;
+                this.life--;
+                return this.life > 0;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.min(1, this.life / 15);
+                ctx.font = this.isReaction ? 'bold 40px Fredoka' : 'bold 28px Fredoka';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = this.color;
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.strokeText(this.text, this.x, this.y);
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.restore();
+            }
+        }
+
+        // Particle
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 12;
+                this.vy = (Math.random() - 0.5) * 12 - 3;
+                this.life = 1;
+                this.color = color;
+                this.size = Math.random() * 6 + 3;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.25;
+                this.life -= 0.035;
+                return this.life > 0;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Game Functions
+        function startGame(players) {
+            numPlayers = players;
+            currentPlayer = 1;
+            p1Score = 0;
+            p2Score = 0;
+            totalShots = 0;
+            correctShots = 0;
+            document.getElementById('mainMenu').classList.add('hidden');
+
+            if (players === 2) {
+                document.getElementById('p2ScoreBox').classList.remove('hidden');
+                gamePhase = 'ready';
+                showReadyScreen();
+            } else {
+                document.getElementById('p2ScoreBox').classList.add('hidden');
+                startCountdown();
+            }
+        }
+
+        function showReadyScreen() {
+            const screen = document.getElementById('playerReadyScreen');
+            const text = document.getElementById('playerReadyText');
+            screen.classList.remove('hidden');
+
+            text.textContent = `PLAYER ${currentPlayer} READY?`;
+            text.style.color = currentPlayer === 1 ? '#FF5252' : '#F97316';
+
+            setTimeout(() => {
+                screen.classList.add('hidden');
+                startCountdown();
+            }, 2000);
+        }
+
+        function startCountdown() {
+            const countEl = document.getElementById('countdown');
+            const textEl = document.getElementById('countdownText');
+            countEl.classList.remove('hidden');
+
+            let count = 3;
+            textEl.textContent = count;
+
+            const interval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    textEl.textContent = count;
+                } else if (count === 0) {
+                    textEl.textContent = 'SHOOT!';
+                } else {
+                    clearInterval(interval);
+                    countEl.classList.add('hidden');
+                    startRound();
+                }
+            }, 1000);
+        }
+
+        function startRound() {
+            gameRunning = true;
+            gamePhase = 'playing';
+            targets = [];
+            particles = [];
+            muzzleFlashes = [];
+            popups = [];
+            totalShots = 0;
+            correctShots = 0;
+
+            timeRemaining = difficultySettings[difficulty].time;
+            document.getElementById('timer').textContent = timeRemaining;
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('difficultyBadge').textContent = difficulty.toUpperCase();
+            updateAccuracyDisplay();
+
+            updateScoreDisplay();
+
+            gameTimer = setInterval(() => {
+                timeRemaining--;
+                document.getElementById('timer').textContent = timeRemaining;
+                if (timeRemaining <= 0) {
+                    endRound();
+                }
+            }, 1000);
+
+            gameLoop();
+        }
+
+        function updateScoreDisplay() {
+            if (numPlayers === 2) {
+                document.getElementById('p1Score').textContent = currentPlayer === 1 ? getCurrentScore() : p1Score;
+                document.getElementById('p2Score').textContent = currentPlayer === 2 ? getCurrentScore() : p2Score;
+            } else {
+                document.getElementById('p1Score').textContent = p1Score;
+            }
+        }
+
+        function updateAccuracyDisplay() {
+            const accuracy = totalShots > 0 ? Math.round((correctShots / totalShots) * 100) : 100;
+            document.getElementById('accuracyBadge').textContent = `🎯 ${accuracy}%`;
+        }
+
+        function getAccuracy() {
+            return totalShots > 0 ? Math.round((correctShots / totalShots) * 100) : 100;
+        }
+
+        function getAccuracyBonus() {
+            const acc = getAccuracy();
+            if (acc >= 90) return 100;
+            if (acc >= 80) return 50;
+            return 0;
+        }
+
+        function getCurrentScore() {
+            return currentPlayer === 1 ? p1Score : p2Score;
+        }
+
+        function addScore(points) {
+            if (currentPlayer === 1) {
+                p1Score += points;
+                p1Score = Math.max(0, p1Score);
+            } else {
+                p2Score += points;
+                p2Score = Math.max(0, p2Score);
+            }
+            updateScoreDisplay();
+        }
+
+        function endRound() {
+            gameRunning = false;
+            clearInterval(gameTimer);
+            document.getElementById('hud').classList.add('hidden');
+
+            // Add accuracy bonus
+            const bonus = getAccuracyBonus();
+            if (bonus > 0) {
+                addScore(bonus);
+            }
+
+            if (numPlayers === 2) {
+                if (currentPlayer === 1) {
+                    showScoreReveal(1, p1Score);
+                } else {
+                    showScoreReveal(2, p2Score);
+                }
+            } else {
+                document.getElementById('finalScore').textContent = p1Score;
+                document.getElementById('finalAccuracy').textContent = `🎯 Accuracy: ${getAccuracy()}% ${bonus > 0 ? '(+' + bonus + ' bonus!)' : ''}`;
+                document.getElementById('endScreen').classList.remove('hidden');
+            }
+        }
+
+        function showScoreReveal(player, score) {
+            gamePhase = 'scoreReveal';
+            const screen = document.getElementById('scoreRevealScreen');
+            const bonus = getAccuracyBonus();
+            document.getElementById('scoreRevealTitle').textContent = `PLAYER ${player} SCORED`;
+            document.getElementById('scoreRevealNumber').textContent = score;
+            document.getElementById('accuracyResult').textContent = `🎯 Accuracy: ${getAccuracy()}% ${bonus > 0 ? '(+' + bonus + ' bonus!)' : ''}`;
+            screen.classList.remove('hidden');
+            spawnConfetti('confettiContainer');
+
+            screen.onclick = () => {
+                screen.classList.add('hidden');
+                screen.onclick = null;
+
+                if (player === 1) {
+                    currentPlayer = 2;
+                    totalShots = 0;
+                    correctShots = 0;
+                    gamePhase = 'ready';
+                    showReadyScreen();
+                } else {
+                    showWinner();
+                }
+            };
+        }
+
+        function showWinner() {
+            gamePhase = 'winner';
+            const screen = document.getElementById('winnerScreen');
+            document.getElementById('winnerP1Score').textContent = p1Score;
+            document.getElementById('winnerP2Score').textContent = p2Score;
+
+            let subtitle = '';
+            if (p1Score > p2Score) {
+                subtitle = 'PLAYER 1 WINS! 🎉';
+            } else if (p2Score > p1Score) {
+                subtitle = 'PLAYER 2 WINS! 🎉';
+            } else {
+                subtitle = "IT'S A TIE! 🤝";
+            }
+            document.getElementById('winnerSubtitle').textContent = subtitle;
+
+            screen.classList.remove('hidden');
+            spawnConfetti('winnerConfettiContainer');
+        }
+
+        function spawnConfetti(containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const colors = ['#FF5252', '#FFD600', '#00E676', '#2196F3', '#E040FB'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.fontSize = (Math.random() * 20 + 10) + 'px';
+                confetti.textContent = ['🎉', '🎊', '✨', '⭐', '🎯'][Math.floor(Math.random() * 5)];
+                confetti.style.color = colors[Math.floor(Math.random() * colors.length)];
+                container.appendChild(confetti);
+            }
+        }
+
+        function rematch() {
+            document.getElementById('winnerScreen').classList.add('hidden');
+            currentPlayer = 1;
+            p1Score = 0;
+            p2Score = 0;
+            totalShots = 0;
+            correctShots = 0;
+            gamePhase = 'ready';
+            showReadyScreen();
+        }
+
+        // Spawn targets
+        function spawnTarget() {
+            if (!gameRunning) return;
+            const settings = difficultySettings[difficulty];
+            if (frameCount % settings.spawnRate === 0) {
+                targets.push(new Target());
+            }
+        }
+
+        // Track mouse position
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        // Handle click/touch
+        function handleClick(e) {
+            if (!gameRunning) return;
+
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            let x, y;
+
+            if (e.touches) {
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+
+            // Create muzzle flash
+            muzzleFlashes.push(new MuzzleFlash(x, y));
+            totalShots++;
+
+            // Check if hit any target
+            let hitSomething = false;
+            for (let target of targets) {
+                if (target.state !== 'active') continue;
+
+                const dx = x - target.x;
+                const dy = y - target.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < target.size) {
+                    hitSomething = true;
+                    target.hit();
+
+                    if (target.isReal) {
+                        // Hit real alien
+                        correctShots++;
+                        addScore(10);
+                        popups.push(new Popup(target.x, target.y - 50, '+10', '#00E676'));
+
+                        // Particles
+                        for (let i = 0; i < 10; i++) {
+                            particles.push(new Particle(target.x, target.y, '#4CAF50'));
+                        }
+                    } else {
+                        // Hit fake target
+                        addScore(-5);
+                        popups.push(new Popup(target.x, target.y - 50, '-5', '#FF5252'));
+
+                        // Reaction based on type
+                        if (target.fakeType === 'cactus') {
+                            popups.push(new Popup(target.x, target.y - 90, 'OUCH!', '#FF9800', true));
+                        } else if (target.fakeType === 'balloon') {
+                            popups.push(new Popup(target.x, target.y - 90, 'POP!', '#2196F3', true));
+                            // Balloon pop particles
+                            for (let i = 0; i < 15; i++) {
+                                particles.push(new Particle(target.x, target.y, '#81C784'));
+                            }
+                        } else {
+                            popups.push(new Popup(target.x, target.y - 90, 'EH?', '#FF5722', true));
+                        }
+                    }
+                    updateAccuracyDisplay();
+                    break;
+                }
+            }
+
+            // Miss feedback
+            if (!hitSomething) {
+                popups.push(new Popup(x, y - 30, 'MISS', '#888'));
+            }
+        }
+
+        canvas.addEventListener('click', handleClick);
+        canvas.addEventListener('touchstart', handleClick);
+
+        // Draw crosshair
+        function drawCrosshair() {
+            ctx.save();
+            ctx.strokeStyle = '#FF5252';
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 20, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(mouseX - 30, mouseY);
+            ctx.lineTo(mouseX - 10, mouseY);
+            ctx.moveTo(mouseX + 10, mouseY);
+            ctx.lineTo(mouseX + 30, mouseY);
+            ctx.moveTo(mouseX, mouseY - 30);
+            ctx.lineTo(mouseX, mouseY - 10);
+            ctx.moveTo(mouseX, mouseY + 10);
+            ctx.lineTo(mouseX, mouseY + 30);
+            ctx.stroke();
+
+            ctx.fillStyle = '#FF5252';
+            ctx.beginPath();
+            ctx.arc(mouseX, mouseY, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // Game Loop
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            frameCount++;
+
+            // Clear canvas
+            ctx.fillStyle = '#ECEFF1';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw background
+            drawBackground();
+
+            // Spawn targets
+            spawnTarget();
+
+            // Update and draw targets
+            targets = targets.filter(target => {
+                if (!target.update()) return false;
+                target.draw();
+                return true;
+            });
+
+            // Update and draw muzzle flashes
+            muzzleFlashes = muzzleFlashes.filter(flash => {
+                if (!flash.update()) return false;
+                flash.draw();
+                return true;
+            });
+
+            // Update and draw particles
+            particles = particles.filter(particle => {
+                if (!particle.update()) return false;
+                particle.draw();
+                return true;
+            });
+
+            // Update and draw popups
+            popups = popups.filter(popup => {
+                if (!popup.update()) return false;
+                popup.draw();
+                return true;
+            });
+
+            // Draw crosshair
+            drawCrosshair();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawBackground() {
+            // Simple shooting range background
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#546E7A');
+            gradient.addColorStop(0.7, '#37474F');
+            gradient.addColorStop(1, '#263238');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // Wall texture (simple bricks)
+            ctx.fillStyle = 'rgba(0,0,0,0.1)';
+            for (let y = 0; y < height * 0.75; y += 30) {
+                for (let x = (y % 60 === 0 ? 0 : 30); x < width; x += 60) {
+                    ctx.fillRect(x, y, 58, 28);
+                }
+            }
+
+            // Floor
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(0, height * 0.75, width, height * 0.25);
+
+            // Floor lines
+            ctx.strokeStyle = '#4E342E';
+            ctx.lineWidth = 2;
+            for (let x = 0; x < width; x += 80) {
+                ctx.beginPath();
+                ctx.moveTo(x, height * 0.75);
+                ctx.lineTo(x + 40, height);
+                ctx.stroke();
+            }
+
+            // Target stands
+            ctx.fillStyle = '#795548';
+            ctx.fillRect(50, height * 0.6, 15, height * 0.15);
+            ctx.fillRect(width - 65, height * 0.6, 15, height * 0.15);
+            ctx.fillRect(width / 2 - 7, height * 0.55, 15, height * 0.2);
+        }
+
+        // Initial draw
+        function initialDraw() {
+            ctx.fillStyle = '#546E7A';
+            ctx.fillRect(0, 0, width, height);
+            drawBackground();
+        }
+        initialDraw();
+    </script>
+</body>
+
+</html>
