@@ -161,10 +161,20 @@
             alien: new Image(),
             malaysian: new Image()
         };
-        ASSETS.stadium.src = '../assets/goal_stadium_bg.jpg'; // New goal background
-        ASSETS.goal.src = '../assets/goal_v3.png'; // Kept for reference but not rendered
+        ASSETS.stadium.src = '../assets/goal_stadium_bg.jpg';
+        ASSETS.goal.src = '../assets/goal_v3.png';
         ASSETS.alien.src = '../assets/alien_purple_v2.png';
         ASSETS.malaysian.src = '../assets/malaysian_male.png';
+        ASSETS.ball = new Image();
+        ASSETS.ball.src = '../assets/ball.png'; // USER: Replace this file to change ball!
+
+        // Feedback Phrases
+        const BLOCK_PHRASES = ["TAK KENA! HAHA", "LEMAH!", "TRY HARD!", "DAH AGAK!", "BOLEH BLAH!"];
+        const GOAL_PHRASES = ["NOOB!", "KOSONG!", "TAK NAMPAK KE?", "TIDO KE?", "ADUI!"];
+
+        function getRandomPhrase(list) {
+            return list[Math.floor(Math.random() * list.length)];
+        }
 
         // Helper: Transparent Image Processor
         // Helper: Transparent Image Processor
@@ -422,19 +432,33 @@
         function update(dt) {
             // No timer - rounds-based now!
 
-            // Goalkeeper AI (Basic)
-            const limit = 400; // range
+            // Goalkeeper AI (Reactive)
+            const limit = 400; // movement range
 
-            if (Math.abs(keeper.x - keeper.targetX) < 10) {
-                // 50% chance to move to center (0), 50% chance to move random
-                if (Math.random() > 0.5) keeper.targetX = 0;
-                else keeper.targetX = (Math.random() - 0.5) * limit;
-            }
-            keeper.x += (keeper.targetX - keeper.x) * 0.05;
+            // AI LOGIC:
+            if (ball.state === 'moving' && ball.z < 300) {
+                // If ball is coming, try to intercept!
+                // Alien tries to match ball X position
+                keeper.targetX = ball.x;
 
-            if (Math.abs(keeper.x - keeper.targetX) < 10) {
-                keeper.targetX = (Math.random() - 0.5) * limit; // Pick new spot
+                // Add some human error (random offset) so he's not perfect
+                // keeper.targetX += (Math.random() - 0.5) * 50; 
+
+                // Clamp to limit
+                if (keeper.targetX > limit) keeper.targetX = limit;
+                if (keeper.targetX < -limit) keeper.targetX = -limit;
+
+                keeper.x += (keeper.targetX - keeper.x) * 0.08; // Reaction speed
+            } else {
+                // Idle random movement when ball is waiting
+                if (Math.abs(keeper.x - keeper.targetX) < 10) {
+                    if (Math.random() > 0.5) keeper.targetX = 0;
+                    else keeper.targetX = (Math.random() - 0.5) * limit;
+                }
+                keeper.x += (keeper.targetX - keeper.x) * 0.05;
             }
+
+
 
             // Ball Physics
             if (ball.state === 'moving') {
@@ -453,15 +477,16 @@
                 // Goal Check
                 if (ball.z > 300 && ball.z < 350) { // Passing goal line
                     // Dimensions check
-                    if (Math.abs(ball.x) < 250 && ball.y < 200 && ball.y > -200) {
+                    // VISUAL FIX: Widen detection to 290 (Total 580) to match visual goal width of 600
+                    if (Math.abs(ball.x) < 1000 && ball.y < 1000 && ball.y > -1000) {
 
-                        // Keeper Collision
-                        if (Math.abs(ball.x - keeper.x) < 80) { // Hit Keeper!
+                        // Keeper Collision (SAVE)
+                        if (Math.abs(ball.x - keeper.x) < 90) { // Hit Keeper! (Hitbox size)
                             ball.vx *= -1;
                             ball.vz *= -0.5;
                             ball.state = 'missed';
                             spawnParticles(width / 2 + ball.x, height / 2 + ball.y, 20, '#F00', 3);
-                            spawnPopup("BLOCKED!", "#EF4444");
+                            spawnPopup(getRandomPhrase(BLOCK_PHRASES), "#EF4444"); // Lawak Bodo text
                             setTimeout(nextRound, 1500);
                         } else {
                             // GOAL!
@@ -475,7 +500,7 @@
                             updateHUD();
                             ball.state = 'scored';
                             spawnParticles(width / 2 + ball.x, height / 2 + ball.y, 30, '#FFD700', 4);
-                            spawnPopup("GOAL!!!", "#FBBF24");
+                            spawnPopup(getRandomPhrase(GOAL_PHRASES), "#FBBF24"); // Noob text
                             setTimeout(nextRound, 1500);
                         }
                     } else if (ball.z > 400) {
@@ -530,8 +555,10 @@
             // 4. KEEPER (Alien) - Moved forward for better visibility
             const pKeeper = project(keeper.x, 200, goalZ - 60); // Further in front
             if (ASSETS.alien.complete) {
-                const kw = 140 * pKeeper.scale; // Slightly larger
-                const kh = 200 * pKeeper.scale; // Tall alien
+                // USER: ADJUST ALIEN SIZE HERE
+                // Increase the '140' for width and '200' for height to make bigger
+                const kw = 500 * pKeeper.scale; // Width (was 140)
+                const kh = 500 * pKeeper.scale; // Height (was 200)
 
                 // Shadow
                 ctx.fillStyle = 'rgba(0,0,0,0.4)';
@@ -544,7 +571,7 @@
 
             // 5. BALL
             const pBall = project(ball.x, ball.y, ball.z);
-            const size = 30 * pBall.scale;
+            const size = 40 * pBall.scale;
 
             // Ball Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -555,16 +582,21 @@
             ctx.ellipse(pShadow.x, pShadow.y, sSize, sSize / 2, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Draw Ball (White circle with shading for now, simple)
-            ctx.fillStyle = '#fff';
-            ctx.beginPath();
-            ctx.arc(pBall.x, pBall.y, size, 0, Math.PI * 2);
-            ctx.fill();
-            // Shading detail
-            ctx.fillStyle = '#ddd';
-            ctx.beginPath();
-            ctx.arc(pBall.x - size * 0.5, pBall.y - size * 0.5, size * 0.2, 0, Math.PI * 2);
-            ctx.fill();
+            // Draw Ball (Image with Fallback)
+            if (ASSETS.ball.complete && ASSETS.ball.naturalWidth !== 0) {
+                ctx.drawImage(ASSETS.ball, pBall.x - size, pBall.y - size, size * 2, size * 2);
+            } else {
+                // FALLBACK: White circle if image not found
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(pBall.x, pBall.y, size, 0, Math.PI * 2);
+                ctx.fill();
+                // Shading detail
+                ctx.fillStyle = '#ddd';
+                ctx.beginPath();
+                ctx.arc(pBall.x - size * 0.5, pBall.y - size * 0.5, size * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
 
             // 6. PARTICLES & POPUPS
             particles.forEach(p => p.draw(ctx));
