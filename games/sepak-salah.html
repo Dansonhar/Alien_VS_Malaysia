@@ -448,7 +448,9 @@
                 if (keeper.targetX > limit) keeper.targetX = limit;
                 if (keeper.targetX < -limit) keeper.targetX = -limit;
 
-                keeper.x += (keeper.targetX - keeper.x) * 0.08; // Reaction speed
+                // USER: ADJUST ALIEN SPEED HERE (Lower = Slower, Higher = Faster)
+                // Was 0.08, Increased to 0.15 for harder difficulty
+                keeper.x += (keeper.targetX - keeper.x) * 0.15; // Reaction speed
             } else {
                 // Idle random movement when ball is waiting
                 if (Math.abs(keeper.x - keeper.targetX) < 10) {
@@ -481,7 +483,9 @@
                     if (Math.abs(ball.x) < 1000 && ball.y < 1000 && ball.y > -1000) {
 
                         // Keeper Collision (SAVE)
-                        if (Math.abs(ball.x - keeper.x) < 90) { // Hit Keeper! (Hitbox size)
+                        // USER: ADJUST CATCH RADIUS HERE (Larger = Easier for Alien to save)
+                        // Was 90, Increased to 120 for harder difficulty
+                        if (Math.abs(ball.x - keeper.x) < 120) { // Hit Keeper! (Hitbox size)
                             ball.vx *= -1;
                             ball.vz *= -0.5;
                             ball.state = 'missed';
