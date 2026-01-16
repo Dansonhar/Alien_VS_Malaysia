@@ -377,12 +377,22 @@
 
         // Asset paths
         const ASSETS = {
-            alienNormal: '../assets/alien_purple_v2.png',
-            alienHelmet: '../assets/alien_purple_v2.png',
-            alienHit: '../assets/alien_purple_v2.png',
-            durian: '../assets/durian.png', // Not used but available
+            // Aliens (randomized)
+            alienBlueAnt: '../assets/alien_blue_ant.png',
+            alienOrangeTall: '../assets/alien_orange_tall.png',
+            alienRedRound: '../assets/alien_red_round.png',
+            alienGreenEyes: '../assets/green alien with big eyes.png',
+
+            // Malaysians (randomized)
+            pakcikSongkok: '../assets/pakcik with songkok.png',
+            uncleBatik: '../assets/malaysian uncle in batik shirt.png',
             malaysianMale: '../assets/malaysian_male.png',
             malaysianFemale: '../assets/malaysian_female_v2.png',
+
+            // Effects
+            redFlash: '../assets/Red_flash.png',
+
+            durian: '../assets/durian.png',
             heroBanner: '../assets/hero-banner-final.jpg'
         };
 
@@ -729,6 +739,16 @@
                 this.malaysianGender = Math.random() > 0.5 ? 'male' : 'female';
                 this.size = this.isMalaysian ? 180 : 200;
 
+                // Randomize alien variant (for real aliens)
+                const alienVariants = ['alienBlueAnt', 'alienOrangeTall', 'alienRedRound', 'alienPurpleOctopus', 'alienGreenEyes'];
+                this.alienVariant = alienVariants[Math.floor(Math.random() * alienVariants.length)];
+
+                // Randomize Malaysian  variant (for fake malaysians)
+                const malaysianVariants = this.malaysianGender === 'male'
+                    ? ['pakcikSongkok', 'uncleBatik', 'malaysianMale']
+                    : ['malaysianFemale'];
+                this.malaysianVariant = malaysianVariants[Math.floor(Math.random() * malaysianVariants.length)];
+
                 // Anti-Overlap Spawn
                 let safe = false;
                 let attempts = 0;
@@ -831,9 +851,8 @@
             }
 
             drawAlien() {
-                // Try PNG assets
-                // Always use normal image as base since we don't have separate sprites
-                let img = images.alienNormal;
+                // Use randomized alien variant
+                let img = images[this.alienVariant];
 
                 // Programmatic Hit Effect (Red Tint) instead of swapping image
                 if (this.state === 'hit') {
@@ -846,12 +865,9 @@
                     // Reset filter
                     ctx.filter = 'none';
 
-                    // Green skin visible check - CHANGED to handle new alien (purple)
-                    // We remove the green skin circle for the purple alien, or adapt it?
-                    // The old code drew a green circle if hasDisguise. 
-                    // Let's remove it or make it purple to match.
+                    // Skin peek visible check (for disguises)
                     if (this.hasDisguise) {
-                        ctx.fillStyle = '#673AB7'; // Purple skin matching new alien
+                        ctx.fillStyle = '#4CAF50'; // Green skin peek
                         ctx.beginPath();
                         ctx.arc(-25, 5, 8, 0, Math.PI * 2);
                         ctx.arc(25, 5, 8, 0, Math.PI * 2);
@@ -965,9 +981,8 @@
 
             drawFakeTarget() {
                 if (this.fakeType === 'malaysian') {
-                    // MALAYSIAN HUMAN
-                    const imgKey = this.malaysianGender === 'male' ? 'malaysianMale' : 'malaysianFemale';
-                    const img = images[imgKey];
+                    // MALAYSIAN HUMAN (randomized variant)
+                    const img = images[this.malaysianVariant];
 
                     if (img && img.complete && img.naturalWidth > 0) {
                         ctx.drawImage(img, -this.size / 2, -this.size / 2, this.size, this.size);
@@ -1482,6 +1497,29 @@
 
             // Create muzzle flash
             muzzleFlashes.push(new MuzzleFlash(x, y));
+
+            // Create red flash effect
+            if (images.redFlash && images.redFlash.complete) {
+                particles.push({
+                    x, y,
+                    vx: 0, vy: 0,
+                    life: 15,
+                    maxLife: 15,
+                    isFlash: true,
+                    update() {
+                        this.life--;
+                        return this.life > 0;
+                    },
+                    draw() {
+                        const alpha = this.life / this.maxLife;
+                        ctx.globalAlpha = alpha * 0.8;
+                        const size = 150 * (1 - alpha * 0.5);
+                        ctx.drawImage(images.redFlash, this.x - size / 2, this.y - size / 2, size, size);
+                        ctx.globalAlpha = 1;
+                    }
+                });
+            }
+
             totalShots++;
 
             // Check if hit any target
