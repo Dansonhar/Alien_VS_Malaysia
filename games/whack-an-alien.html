@@ -26,7 +26,7 @@
             }
 
             50% {
-                transform: scale(1.1);
+                transform: scale(1.2);
             }
         }
 
@@ -38,240 +38,590 @@
             }
 
             25% {
-                transform: translateX(-5px);
+                transform: translateX(-5px) rotate(-5deg);
             }
 
             75% {
-                transform: translateX(5px);
+                transform: translateX(5px) rotate(5deg);
+            }
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
             }
         }
 
         .animate-pop {
-            animation: pop 100s ease-out;
+            animation: pop 0.2s ease-out;
         }
 
         .animate-shake {
-            animation: shake 1s ease-out;
+            animation: shake 0.3s ease-out;
+        }
+
+        .animate-float {
+            animation: float 2s ease-in-out infinite;
+        }
+
+        /* Grid Layout Fix */
+        .grid-3x3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            /* Reduced gap - Closer holes */
+            max-width: 800px;
+            margin: 0 auto;
+            margin: 0 auto;
+        }
+
+        /* Fire Effect */
+        @keyframes firePop {
+            0% {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        .fire-effect {
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            transform: translate(-50%, -50%);
+            width: 150%;
+            height: 150%;
+            pointer-events: none;
+            z-index: 20;
+            animation: firePop 0.4s ease-out forwards;
         }
     </style>
 </head>
 
-<body
-    class="font-fredoka bg-gradient-to-b from-pink-200 via-orange-100 to-yellow-100 min-h-screen overflow-hidden touch-none select-none">
+<body class="font-fredoka min-h-screen overflow-hidden touch-none select-none bg-cover bg-center bg-no-repeat"
+    style="background-image: url('../assets/whack_bg.png');">
 
-    <!-- HUD -->
-    <div id="hud" class="hidden fixed top-4 left-0 right-0 z-50 px-4 flex justify-between pointer-events-none">
-        <!-- Spacer for left side to avoid overlap with back button -->
-        <div class="w-32"></div>
+    <!-- HUD (Centered & Bigger) -->
+    <div id="hud"
+        class="hidden fixed top-8 left-0 right-0 z-50 px-4 flex flex-col items-center gap-4 pointer-events-none">
 
-        <div class="flex gap-4">
+        <!-- Score & Time (Row 1 - Top) -->
+        <div class="flex gap-3">
             <div
-                class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg pointer-events-auto">
+                class="bg-white/90 px-6 py-3 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl pointer-events-auto">
+                <!-- Increased text size & padding -->
                 SCORE: <span id="score" class="text-pandan">0</span>
             </div>
             <div
-                class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg text-sambal pointer-events-auto">
-                <span id="timer">60</span>s
+                class="bg-white/90 px-6 py-3 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl text-sambal pointer-events-auto">
+                <!-- Increased text size & padding -->
+                <span id="timer">30</span>s
             </div>
+        </div>
+
+        <!-- Player Indicator (Row 2 - Below) -->
+        <div id="playerIndicator"
+            class="bg-white/90 px-8 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl pointer-events-auto">
+            <!-- Increased text size -->
+            PLAYER 1
         </div>
     </div>
 
     <!-- Persistent Back Button -->
-    <button onclick="window.location.href='../'"
-        class="fixed top-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
-        <span class="text-2xl">🏠</span> BACK TO MENU
+    <button onclick="handleBackButton()"
+        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
+        <span class="text-xl">🏠</span> BACK
     </button>
 
     <!-- Game Area -->
-    <div id="gameArea" class="w-full h-screen flex flex-wrap items-center justify-center gap-4 p-8 pt-20">
-        <!-- Holes will be generated here -->
+    <div id="gameContainer" class="w-full h-full flex items-center justify-center pt-24 pb-12 px-4">
+        <div id="gameGrid" class="grid-3x3">
+            <!-- Holes injected here -->
+        </div>
+    </div>
+
+    <!-- Countdown Overlay -->
+    <div id="countdownOverlay"
+        class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[110] pointer-events-none">
+        <div id="countdownText" class="text-9xl font-black text-pandan drop-shadow-[0_8px_0_#000] animate-pop">3</div>
     </div>
 
     <!-- Start Screen -->
     <div id="startScreen"
         class="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1 class="text-4xl md:text-5xl font-bold text-pandan drop-shadow-[0_4px_0_#000] mb-4">
+        <h1 class="text-4xl md:text-5xl font-bold text-pandan drop-shadow-[0_4px_0_#000] mb-4 animate-float">
             DESTROY ALIENS,<br>NOT AUNTIES!
         </h1>
-        <p class="text-white text-lg mb-2">Tap the <span class="text-pandan">GREEN ALIENS</span> to score!</p>
-        <p class="text-sambal text-lg mb-6">⚠️ DON'T hit the Aunties! (-5 points)</p>
-        <button onclick="startGame()"
-            class="bg-durian text-black font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
-            START MISSION
+        <p class="text-white text-lg mb-4">Shoot <span class="text-pandan">ALIENS (👽)</span>. <span
+                class="text-pink-400">AUNTIES (👵)</span>!</p>
+
+        <div class="flex flex-col gap-4 w-full max-w-xs">
+            <div class="flex gap-2 justify-center mb-4">
+                <button onclick="setDifficulty('easy')" id="btnEasy"
+                    class="bg-pandan text-black font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60">EASY</button>
+                <button onclick="setDifficulty('normal')" id="btnNormal"
+                    class="bg-durian text-black font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000]">NORMAL</button>
+                <button onclick="setDifficulty('hard')" id="btnHard"
+                    class="bg-sambal text-white font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60">HARD</button>
+            </div>
+
+            <button onclick="startGame(1)"
+                class="bg-durian text-black font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+                1 PLAYER
+            </button>
+            <button onclick="startGame(2)"
+                class="bg-cyan-400 text-black font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+                2 PLAYERS (VS)
+            </button>
+        </div>
+    </div>
+
+    <!-- Turn Transition Screen -->
+    <div id="turnScreen"
+        class="hidden fixed inset-0 bg-gradient-to-b from-purple-900 via-black to-purple-900 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <div class="text-9xl mb-6 animate-bounce">🎯</div>
+        <h2 id="turnTitle"
+            class="text-5xl md:text-7xl font-black text-white drop-shadow-[0_8px_0_#000] mb-6 animate-float">PLAYER 1
+            FINISHED!</h2>
+        <div class="bg-white/10 backdrop-blur-sm p-8 rounded-3xl border-4 border-white/30 mb-8">
+            <p class="text-2xl text-white mb-2">Final Score</p>
+            <p id="turnScore" class="text-7xl font-black text-pandan drop-shadow-[0_6px_0_#000]">0</p>
+        </div>
+        <button onclick="startNextTurn()"
+            class="bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold text-2xl px-12 py-5 rounded-full border-4 border-white shadow-[0_8px_0_#0891B2] hover:-translate-y-2 hover:shadow-[0_12px_0_#0891B2] active:translate-y-0 active:shadow-[0_4px_0_#0891B2] transition-all animate-pulse">
+            START PLAYER 2 🔥
         </button>
     </div>
 
-    <!-- End Screen -->
+    <!-- Game Over / Result Screen -->
     <div id="endScreen"
-        class="hidden fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1 class="text-4xl md:text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000] mb-4">
-            TIME'S UP!
-        </h1>
-        <p class="text-white text-xl mb-2">Final Score:</p>
-        <div id="finalScore" class="text-6xl font-bold text-pandan drop-shadow-[0_4px_0_#000] mb-6">0</div>
-        <button onclick="startGame()"
-            class="bg-pandan text-black font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
-            PLAY AGAIN
-        </button>
-        <button onclick="window.location.href='../'"
-            class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
-            BACK TO MENU
-        </button>
+        class="hidden fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[100] text-center px-4">
+        <h1 class="text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000] mb-8">GAME OVER!</h1>
+
+        <!-- Scoreboard -->
+        <div class="bg-white/10 p-8 rounded-2xl border-4 border-white/20 mb-8 backdrop-blur-sm w-full max-w-md">
+            <div class="flex justify-between items-center mb-4 text-2xl font-bold text-white">
+                <span>PLAYER 1</span>
+                <span id="p1FinalScore" class="text-pandan">0</span>
+            </div>
+            <div id="p2ScoreRow"
+                class="hidden flex justify-between items-center text-2xl font-bold text-white border-t-2 border-white/20 pt-4">
+                <span>PLAYER 2</span>
+                <span id="p2FinalScore" class="text-cyan-400">0</span>
+            </div>
+        </div>
+
+        <h2 id="winnerText" class="text-3xl font-bold text-white mb-8 animate-float"></h2>
+
+        <div class="flex gap-4">
+            <button onclick="resetGame()"
+                class="bg-pandan text-black font-bold text-lg px-8 py-3 rounded-full border-4 border-black shadow-[4px_4px_0_#000] hover:-translate-y-1 transition-all">
+                PLAY AGAIN
+            </button>
+            <button onclick="handleBackButton()"
+                class="bg-gray-200 text-black font-bold text-lg px-8 py-3 rounded-full border-4 border-black shadow-[4px_4px_0_#000] hover:-translate-y-1 transition-all">
+                MENU
+            </button>
+        </div>
     </div>
 
-    <!-- Hit Effect Overlay -->
-    <div id="hitEffect" class="hidden fixed inset-0 pointer-events-none z-[200] flex items-center justify-center">
-        <span class="text-6xl font-bold drop-shadow-[0_4px_0_#000]"></span>
+    <!-- Hit Effect Text -->
+    <div id="hitEffect" class="hidden fixed inset-0 pointer-events-none z-[150] flex items-center justify-center">
+        <span class="text-6xl font-bold drop-shadow-[0_4px_0_#000] animate-pop"></span>
     </div>
 
     <script>
-        const gameArea = document.getElementById('gameArea');
+        // --- GAME CONFIG ---
+        const GAME_DURATION = 60; // Seconds
+        const ALIEN_POINTS = 10;
+
+        const DIFFICULTY_SETTINGS = {
+            easy: { minTime: 1200, maxTime: 2000, penalty: 5 },
+            normal: { minTime: 800, maxTime: 1500, penalty: 10 },
+            hard: { minTime: 400, maxTime: 900, penalty: 20 }
+        };
+
+        // --- ASSETS ---
+        const ALIEN_IMAGES = [
+            '../assets/alien_blue_ant.png',
+            '../assets/green alien with big eyes.png',
+            '../assets/alien_orange_tall.png',
+            '../assets/alien_red_round.png',
+        ];
+        const AUNTIE_IMAGES = [
+            '../assets/malaysian_female_v2.png',
+            '../assets/aunty with handbag.png',
+            '../assets/young malaysia girl with hijab.png',
+        ];
+
+        const ALIEN_TEXTS = ["MAMPOS!", "KENA!", "RASAKAN!", "HIAK!", "BYE!", "PADAN MUKA!"];
+        const AUNTIE_TEXTS = ["APA NI?!", "BUTO!", "SAKIT LA!", "OIT!", "BUTA KE?", "LAWA BODO?!"];
+
+        // --- STATE ---
+        // --- STATE ---
+        let currentMode = 1; // 1 or 2 players
+        let currentDifficulty = 'normal';
+        let currentPlayer = 1;
+        let scores = { 1: 0, 2: 0 };
+        let timer = GAME_DURATION;
+        let gameInterval = null;
+        let peepTimeout = null;
+        let isPlaying = false;
+        let holes = [];
+        let lastHole = -1;
+
+        // --- DOM ELEMENTS ---
+        const hud = document.getElementById('hud');
+        const startScreen = document.getElementById('startScreen');
+        const turnScreen = document.getElementById('turnScreen');
+        const endScreen = document.getElementById('endScreen');
+        const gameGrid = document.getElementById('gameGrid');
         const scoreDisplay = document.getElementById('score');
         const timerDisplay = document.getElementById('timer');
+        const playerIndicator = document.getElementById('playerIndicator');
         const hitEffect = document.getElementById('hitEffect');
 
-        let score = 0;
-        let timeUp = false;
-        let gameTimer = null;
-        let holes = [];
-
-        // Create holes
-        function createHoles() {
-            gameArea.innerHTML = '';
+        // --- INIT ---
+        function initGrid() {
+            gameGrid.innerHTML = '';
             holes = [];
-            const numHoles = window.innerWidth < 768 ? 6 : 9;
-
-            for (let i = 0; i < numHoles; i++) {
+            // Create 3x3 Grid (9 Holes)
+            for (let i = 0; i < 9; i++) {
                 const hole = document.createElement('div');
-                hole.className = 'relative w-28 h-28 md:w-36 md:h-36';
+                // Increased hole size: w-32 h-32 (small screens), sm:w-48 sm:h-48 (larger screens)
+                hole.className = 'relative w-32 h-32 sm:w-48 sm:h-48 flex justify-center';
                 hole.innerHTML = `
-                    <div class="absolute bottom-0 w-full h-12 bg-amber-800 rounded-t-full border-4 border-black"></div>
-                    <div class="character absolute bottom-8 left-1/2 -translate-x-1/2 w-16 h-20 md:w-20 md:h-24 opacity-0 transition-all duration-100 cursor-pointer" data-index="${i}">
-                        <div class="face w-full h-full rounded-full flex items-center justify-center text-4xl md:text-5xl"></div>
+                    <div class="absolute bottom-[-45px] w-full h-8 bg-amber-900/40 rounded-full blur-sm"></div> <!-- Shadow -->
+                    <!-- Lowered Mound: Changed h-20 to h-14 -->
+                    <div class="absolute bottom-[-50px] w-4/5 h-7 bg-gradient-to-b from-amber-700 to-amber-900 rounded-t-2xl border-4 border-black z-10"></div> <!-- Mound -->
+                    <!-- Increased character size: w-28 h-28 (small), sm:w-40 sm:h-40 (large) -->
+                    <div class="character absolute bottom-[-30px] w-28 h-28 sm:w-40 sm:h-40 transition-all duration-100 cursor-pointer z-0 translate-y-full opacity-0">
+                        <img draggable="false" class="w-full h-full object-contain drop-shadow-md hover:scale-110 transition-transform select-none" src="" alt="Character">
                     </div>
                 `;
-                gameArea.appendChild(hole);
+                gameGrid.appendChild(hole);
 
                 const charDiv = hole.querySelector('.character');
-                charDiv.addEventListener('click', () => whack(i));
+                const charImg = hole.querySelector('img');
+
+                // Input handling
+                charDiv.addEventListener('mousedown', () => whack(i));
                 charDiv.addEventListener('touchstart', (e) => { e.preventDefault(); whack(i); });
 
-                holes.push({
-                    element: hole,
-                    charDiv: charDiv,
-                    faceDiv: charDiv.querySelector('.face'),
-                    isUp: false,
-                    type: null
-                });
+                holes.push({ element: hole, char: charDiv, img: charImg, isUp: false, type: null });
             }
         }
 
-        function peep() {
-            if (timeUp) return;
+        // --- GAME LOOP ---
+        function startGame(mode) {
+            // Stop any existing game
+            isPlaying = false;
+            clearInterval(gameInterval);
+            clearTimeout(peepTimeout);
 
-            const idx = Math.floor(Math.random() * holes.length);
-            const hole = holes[idx];
+            // Reset all state
+            currentMode = mode;
+            currentPlayer = 1;
+            scores = { 1: 0, 2: 0 };
+            timer = GAME_DURATION;
 
-            if (hole.isUp) {
-                setTimeout(peep, 100);
-                return;
-            }
+            startScreen.classList.add('hidden');
+            endScreen.classList.add('hidden');
+            turnScreen.classList.add('hidden');
 
-            // 70% alien, 30% aunty
-            const isAlien = Math.random() > 0.3;
-            hole.type = isAlien ? 'alien' : 'aunty';
-
-            if (isAlien) {
-                hole.faceDiv.textContent = '👽';
-                hole.faceDiv.className = 'face w-full h-full rounded-full flex items-center justify-center text-4xl md:text-5xl bg-pandan';
-            } else {
-                hole.faceDiv.textContent = '👵';
-                hole.faceDiv.className = 'face w-full h-full rounded-full flex items-center justify-center text-4xl md:text-5xl bg-pink-300';
-            }
-
-            hole.charDiv.classList.remove('opacity-0');
-            hole.charDiv.classList.add('translate-y-[-20px]');
-            hole.isUp = true;
-
-            const upTime = 1200 + Math.random() * 500;
-            setTimeout(() => {
-                if (hole.isUp) {
-                    hole.charDiv.classList.add('opacity-0');
-                    hole.charDiv.classList.remove('translate-y-[-20px]');
-                    hole.isUp = false;
-                }
-            }, upTime);
-
-            const nextPeep = 900 + Math.random() * 500;
-            setTimeout(peep, nextPeep);
+            startTurn();
         }
 
-        function whack(index) {
-            const hole = holes[index];
-            if (!hole.isUp) return;
+        function startTurn() {
+            // Stop any previous game activity
+            isPlaying = false;
+            clearInterval(gameInterval);
+            clearTimeout(peepTimeout);
 
-            if (hole.type === 'alien') {
-                score++;
-                scoreDisplay.textContent = score;
-                showHitEffect('BAM!', 'text-durian');
-                hole.charDiv.classList.add('animate-pop');
-            } else {
-                score = Math.max(0, score - 5);
-                scoreDisplay.textContent = score;
-                showHitEffect('OI!!!', 'text-sambal');
-                hole.charDiv.classList.add('animate-shake');
-            }
+            // Reset Turn State  
+            timer = GAME_DURATION;
+            scores[currentPlayer] = 0;
 
-            hole.charDiv.classList.add('opacity-0');
-            hole.charDiv.classList.remove('translate-y-[-20px]');
-            hole.isUp = false;
+            startScreen.classList.add('hidden');
+            turnScreen.classList.add('hidden');
+            updateHUD();
 
-            setTimeout(() => {
-                hole.charDiv.classList.remove('animate-pop', 'animate-shake');
-            }, 300);
-        }
+            startScreen.classList.add('hidden');
+            scoreDisplay.innerText = 0;
 
-        function showHitEffect(text, colorClass) {
-            const span = hitEffect.querySelector('span');
-            span.textContent = text;
-            span.className = `text-6xl font-bold drop-shadow-[0_4px_0_#000] ${colorClass}`;
-            hitEffect.classList.remove('hidden');
-            setTimeout(() => hitEffect.classList.add('hidden'), 300);
-        }
+            // Start Countdown
+            const overlay = document.getElementById('countdownOverlay');
+            const countText = document.getElementById('countdownText');
+            overlay.classList.remove('hidden');
 
-        function startGame() {
-            score = 0;
-            timeUp = false;
-            scoreDisplay.textContent = 0;
+            let count = 3;
+            countText.innerText = count;
+            countText.className = "text-9xl font-black text-white drop-shadow-[0_8px_0_#000] animate-pop";
 
-            let timeLeft = 60;
-            timerDisplay.textContent = timeLeft;
-
-            document.getElementById('startScreen').classList.add('hidden');
-            document.getElementById('endScreen').classList.add('hidden');
-            document.getElementById('hud').classList.remove('hidden');
-
-            createHoles();
-            peep();
-
-            gameTimer = setInterval(() => {
-                timeLeft--;
-                timerDisplay.textContent = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(gameTimer);
-                    timeUp = true;
-                    endGame();
+            const timerInt = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countText.innerText = count;
+                    // Retrigger animation
+                    countText.classList.remove('animate-pop');
+                    void countText.offsetWidth; // trigger reflow
+                    countText.classList.add('animate-pop');
+                } else if (count === 0) {
+                    countText.innerText = "GO!";
+                    countText.className = "text-9xl font-black text-pandan drop-shadow-[0_8px_0_#000] animate-pop";
+                } else {
+                    clearInterval(timerInt);
+                    overlay.classList.add('hidden');
+                    realStartGame();
                 }
             }, 1000);
         }
 
-        function endGame() {
-            document.getElementById('hud').classList.add('hidden');
-            document.getElementById('finalScore').textContent = score;
-            document.getElementById('endScreen').classList.remove('hidden');
+        function realStartGame() {
+            isPlaying = true;
+            timer = GAME_DURATION;
+            initGrid();
+            updateHUD();
+
+            hud.classList.remove('hidden');
+            gameGrid.classList.remove('opacity-50'); // Just in case
+
+            gameInterval = setInterval(() => {
+                timer--;
+                updateHUD();
+                if (timer <= 0) {
+                    endTurn();
+                }
+            }, 1000);
+
+            peep();
         }
 
-        createHoles();
+        function endTurn() {
+            isPlaying = false;
+            clearInterval(gameInterval);
+            clearTimeout(peepTimeout);
+
+            // Hide all holes
+            holes.forEach(h => {
+                h.isUp = false;
+                h.char.classList.add('translate-y-full', 'opacity-0');
+            });
+
+            if (currentMode === 2 && currentPlayer === 1) {
+                // Prepare Player 2
+                document.getElementById('turnTitle').innerText = "PLAYER 1 FINISHED!";
+                document.getElementById('turnScore').innerText = scores[1];
+                document.getElementById('turnScore').className = "text-pandan font-bold";
+                turnScreen.classList.remove('hidden');
+            } else {
+                // Game Over
+                showGameOver();
+            }
+        }
+
+        function startNextTurn() {
+            turnScreen.classList.add('hidden');
+            currentPlayer = 2;
+            startTurn();
+        }
+
+        function showGameOver() {
+            hud.classList.add('hidden');
+            turnScreen.classList.add('hidden');
+            endScreen.classList.remove('hidden');
+
+            document.getElementById('p1FinalScore').innerText = scores[1];
+
+            if (currentMode === 2) {
+                document.getElementById('p2ScoreRow').classList.remove('hidden');
+                document.getElementById('p2FinalScore').innerText = scores[2];
+
+                const winnerText = document.getElementById('winnerText');
+                if (scores[1] > scores[2]) {
+                    winnerText.innerText = "🏆 PLAYER 1 WINS!";
+                    winnerText.className = "text-3xl font-bold text-pandan mb-8 animate-float";
+                } else if (scores[2] > scores[1]) {
+                    winnerText.innerText = "🏆 PLAYER 2 WINS!";
+                    winnerText.className = "text-3xl font-bold text-cyan-400 mb-8 animate-float";
+                } else {
+                    winnerText.innerText = "🤝 IT'S A DRAW!";
+                    winnerText.className = "text-3xl font-bold text-white mb-8";
+                }
+            } else {
+                document.getElementById('p2ScoreRow').classList.add('hidden');
+                document.getElementById('winnerText').innerText = "GREAT JOB!";
+            }
+        }
+
+        function resetGame() {
+            // Stop all game activity
+            isPlaying = false;
+            clearInterval(gameInterval);
+            clearTimeout(peepTimeout);
+
+            // Hide all screens
+            endScreen.classList.add('hidden');
+            turnScreen.classList.add('hidden');
+            hud.classList.add('hidden');
+
+            // Reset state
+            currentMode = 1;
+            currentPlayer = 1;
+            scores = { 1: 0, 2: 0 };
+            timer = GAME_DURATION;
+
+            // Show start screen
+            startScreen.classList.remove('hidden');
+        }
+
+        function updateHUD() {
+            scoreDisplay.innerText = scores[currentPlayer];
+            timerDisplay.innerText = timer;
+            playerIndicator.innerText = currentMode === 2 ? `PLAYER ${currentPlayer} ` : "SINGLE PLAYER";
+            playerIndicator.className = `bg-white/90 px-8 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl pointer-events-auto ${currentPlayer === 1 ? 'bg-pandan text-black' : 'bg-cyan-400 text-black'}`;
+        }
+
+        // --- BACK BUTTON LOGIC ---
+        function handleBackButton() {
+            if (isPlaying || !startScreen.classList.contains('hidden')) {
+                // If game is running or already on start screen, go to homepage
+                if (!startScreen.classList.contains('hidden')) {
+                    window.location.href = '../';
+                } else {
+                    // Return to start screen
+                    resetGame();
+                }
+            } else {
+                // From any other screen, go to homepage
+                window.location.href = '../';
+            }
+        }
+
+        // --- DIFFICULTY ---
+        function setDifficulty(diff) {
+            currentDifficulty = diff;
+
+            // UI Updates
+            document.getElementById('btnEasy').classList.toggle('opacity-60', diff !== 'easy');
+            document.getElementById('btnNormal').classList.toggle('opacity-60', diff !== 'normal');
+            document.getElementById('btnHard').classList.toggle('opacity-60', diff !== 'hard');
+
+            // Scale feedback
+            const btn = document.getElementById('btn' + diff.charAt(0).toUpperCase() + diff.slice(1));
+            btn.classList.add('scale-110');
+            setTimeout(() => btn.classList.remove('scale-110'), 200);
+        }
+
+        function randomTime(min, max) {
+            return Math.round(Math.random() * (max - min) + min);
+        }
+
+        function randomHole(holes) {
+            const idx = Math.floor(Math.random() * holes.length);
+            const hole = holes[idx];
+            if (idx === lastHole) return randomHole(holes); // Prevent same hole twice
+            lastHole = idx;
+            return hole;
+        }
+
+        // --- MECHANICS ---
+        function peep() {
+            if (!isPlaying) return;
+
+            const settings = DIFFICULTY_SETTINGS[currentDifficulty];
+            const time = randomTime(settings.minTime, settings.maxTime);
+            const hole = randomHole(holes);
+
+            const isAlien = Math.random() > 0.3;
+            hole.type = isAlien ? 'alien' : 'aunty';
+
+            if (isAlien) {
+                const img = ALIEN_IMAGES[Math.floor(Math.random() * ALIEN_IMAGES.length)];
+                hole.img.src = img;
+            } else {
+                const img = AUNTIE_IMAGES[Math.floor(Math.random() * AUNTIE_IMAGES.length)];
+                hole.img.src = img;
+            }
+
+            // Reset classes
+            hole.char.classList.remove('translate-y-full', 'opacity-0');
+            hole.isUp = true;
+
+            setTimeout(() => {
+                if (hole.isUp) { // If not whacked yet
+                    hole.char.classList.add('translate-y-full', 'opacity-0');
+                    hole.isUp = false;
+                }
+                if (isPlaying) peep(); // Next peep loop
+            }, time);
+        }
+
+        function whack(index) {
+            if (!isPlaying) return;
+            const hole = holes[index];
+            if (!hole.isUp) return;
+
+            hole.isUp = false;
+            hole.char.classList.add('translate-y-full', 'opacity-0');
+
+            // Fire Effect
+            const fire = document.createElement('img');
+            fire.src = '../assets/fire_effect.png';
+            fire.className = 'fire-effect';
+            hole.element.appendChild(fire);
+            setTimeout(() => fire.remove(), 400);
+
+            if (hole.type === 'alien') {
+                scores[currentPlayer] += ALIEN_POINTS;
+                const text = ALIEN_TEXTS[Math.floor(Math.random() * ALIEN_TEXTS.length)];
+                showFeedback(text, "text-pandan", hole.element);
+            } else {
+                const penalty = DIFFICULTY_SETTINGS[currentDifficulty].penalty;
+                scores[currentPlayer] = Math.max(0, scores[currentPlayer] - penalty);
+                const text = AUNTIE_TEXTS[Math.floor(Math.random() * AUNTIE_TEXTS.length)];
+                showFeedback(text, "text-sambal", hole.element);
+                // Shake screen or element
+                gameGrid.classList.add('animate-shake');
+                setTimeout(() => gameGrid.classList.remove('animate-shake'), 300);
+            }
+            updateHUD();
+        }
+
+        function showFeedback(text, color, element) {
+            const rect = element.getBoundingClientRect();
+            const feedback = hitEffect.querySelector('span');
+            feedback.innerText = text;
+            feedback.className = `text-4xl md:text-6xl font-black italic drop-shadow-[0_4px_0_#000] ${color} animate-pop`;
+
+            hitEffect.classList.remove('hidden');
+            // Random slight offset for juice
+            hitEffect.style.left = (Math.random() * 20 - 10) + 'px';
+            hitEffect.style.top = (Math.random() * 20 - 10) + 'px';
+
+            setTimeout(() => {
+                hitEffect.classList.add('hidden');
+            }, 500);
+        }
+
+        // Init
+        initGrid();
+
     </script>
 </body>
 
