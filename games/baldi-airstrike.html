@@ -139,7 +139,9 @@
                 "ALIENS DATANG LAGI 😱 CEPAT BALING!!"
             </p>
             <button onclick="window.location.href='../index.html'"
-                class="mt-8 text-white/50 text-xl font-bold hover:text-white underline">Back to Hub</button>
+                class="pointer-events-auto bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-2xl border-[8px] border-white shadow-lg text-3xl mt-8 transition-transform hover:scale-105 active:scale-95">
+                🏠 BACK TO HUB
+            </button>
         </div>
 
         <!-- TURN TRANSITION (For 2P) -->
@@ -399,10 +401,12 @@
             }
 
             checkHit(x, y) {
-                // Circular collision for simplicty
-                const dx = x - this.x;
-                const dy = y - this.y;
-                return (dx * dx + dy * dy) < (this.width / 2 + 20) ** 2; // Generous hit box
+                // 🎯 REFINED HIT DETECTION: Switching from generous circle to tight rectangle
+                const hitWidth = this.width * 0.35; // Focused on the central body
+                const hitHeight = this.height * 0.7;
+
+                return Math.abs(x - this.x) < (hitWidth / 2) &&
+                    Math.abs(y - this.y) < (hitHeight / 2);
             }
         }
 

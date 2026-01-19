@@ -80,7 +80,7 @@
             <div class="flex flex-col items-center gap-3">
                 <div
                     class="bg-gray-900/90 rounded-full px-12 py-4 border-[8px] border-yellow-400 min-w-[300px] text-center">
-                    <span id="timerDisplay" class="text-6xl font-bold text-white game-text">45s</span>
+                    <span id="timerDisplay" class="text-6xl font-bold text-white game-text">ROUND 1/10</span>
                 </div>
                 <div id="currentPlayerBadge" class="bg-blue-600/90 rounded-full px-10 py-2 border-[4px] border-white">
                     <span id="currentPlayerText" class="text-2xl font-bold text-white game-text">PLAYER 1</span>
@@ -127,8 +127,10 @@
                     👥 2 PLAYERS
                 </button>
             </div>
-            <button onclick="window.location.href='../'"
-                class="pointer-events-auto text-gray-400 hover:text-white underline text-xl">Back to Hub</button>
+            <button onclick="window.location.href='../index.html'"
+                class="pointer-events-auto bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-2xl border-[8px] border-white shadow-lg text-3xl mt-8 transition-transform hover:scale-105 active:scale-95">
+                🏠 BACK TO HUB
+            </button>
         </div>
 
         <!-- TURN INTRO SCREEN (Player Ready?) -->
@@ -194,7 +196,7 @@
 
         // === GAME CONFIGURATION ===
         const GAMEConfig = {
-            GAME_DURATION: 45, // Seconds per turn
+            MAX_ROUNDS: 10, // Kicks per player
 
             // Ball Physics
             BALL_GRAVITY: 0.5,
@@ -212,7 +214,7 @@
             // Difficulty Presets
             DIFFICULTY: {
                 easy: { alienSpeed: 20, reactionTime: 45, catchRadius: 240, predictionAccuracy: 0.55, catchProbability: 1 },  // ⚙️ TWEAK: 15% catch chance
-                normal: { alienSpeed: 25, reactionTime: 45, catchRadius: 140, predictionAccuracy: 0.75, catchProbability: 1},  // ⚙️ TWEAK: 40% catch chance
+                normal: { alienSpeed: 25, reactionTime: 45, catchRadius: 140, predictionAccuracy: 0.75, catchProbability: 1 },  // ⚙️ TWEAK: 40% catch chance
                 hard: { alienSpeed: 50, reactionTime: 45, catchRadius: 40, predictionAccuracy: 0.9, catchProbability: 1 }  // ⚙️ TWEAK: 70% catch chance
             }
         };
@@ -359,7 +361,7 @@
         let playerCount = 1;
         let currentPlayer = 1;
         let scores = [0, 0]; // P1, P2
-        let timeLeft = 0;
+        let currentRound = 1;
         let particles = [];
         let popups = [];
         let currentDifficulty = 'normal';
@@ -453,13 +455,13 @@
 
         function beginGameplay() {
             gameState = 'PLAYING';
-            timeLeft = GAMEConfig.GAME_DURATION;
+            currentRound = 1;
 
             document.getElementById('hud').classList.remove('hidden');
             document.getElementById('currentPlayerText').textContent = playerCount === 1 ? "SOLO" : `PLAYER ${currentPlayer}`;
             document.getElementById('currentPlayerBadge').className = `rounded-full px-10 py-2 border-[4px] border-white ${currentPlayer === 1 ? 'bg-blue-600/90' : 'bg-red-600/90'}`;
 
-            resetBall();
+            resetBall(true);
             updateHUD();
 
             spawnPopup("START!", "#FFF");
@@ -468,12 +470,8 @@
         }
 
         function updateHUD() {
-            document.getElementById('timerDisplay').textContent = Math.ceil(timeLeft) + "s";
-            if (timeLeft <= 10) {
-                document.getElementById('timerDisplay').classList.add('text-red-500');
-            } else {
-                document.getElementById('timerDisplay').classList.remove('text-red-500');
-            }
+            document.getElementById('timerDisplay').textContent = `ROUND ${currentRound}/${GAMEConfig.MAX_ROUNDS}`;
+            document.getElementById('timerDisplay').classList.remove('text-red-500');
             document.getElementById('scoreDisplay').textContent = scores[currentPlayer - 1];
         }
 
@@ -566,7 +564,15 @@
             };
         }
 
-        function resetBall() {
+        function resetBall(isInitial = false) {
+            if (!isInitial) {
+                if (currentRound >= GAMEConfig.MAX_ROUNDS) {
+                    handleTurnEnd();
+                    return;
+                }
+                currentRound++;
+                updateHUD();
+            }
             ball = { x: 0, y: 150, z: -350, vx: 0, vy: 0, vz: 0, state: 'idle', rotation: 0 };
             alien.x = ball.x;
             alien.targetX = 0;
@@ -622,18 +628,6 @@
 
             const dt = (timestamp - lastTime) / 1000;
             lastTime = timestamp;
-
-            // Timer Logic
-            if (timeLeft > 0) {
-                timeLeft -= dt;
-                if (timeLeft <= 0) {
-                    timeLeft = 0;
-                    handleTurnEnd();
-                    render(); // Render one last frame
-                    return;
-                }
-                updateHUD();
-            }
 
             // --- UPDATE ---
             // Alien AI

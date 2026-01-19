@@ -1600,11 +1600,14 @@
             for (let target of targets) {
                 if (target.state !== 'active') continue;
 
-                const dx = x - target.x;
-                const dy = y - target.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
+                // 🎯 REFINED HIT DETECTION: Switching from large circle to tight rectangle
+                const hitWidth = target.isReal ? target.size * 0.35 : target.size * 0.5; // Narrower for skinny aliens
+                const hitHeight = target.size * 0.8;
 
-                if (dist < target.size) {
+                const isHit = Math.abs(x - target.x) < (hitWidth / 2) &&
+                    Math.abs(y - target.y) < (hitHeight / 2);
+
+                if (isHit) {
                     hitSomething = true;
                     target.hit();
 
