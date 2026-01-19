@@ -215,9 +215,9 @@
 
             // Difficulty Presets
             DIFFICULTY: {
-                easy: { alienSpeed: 20, reactionTime: 45, catchRadius: 240, predictionAccuracy: 0.55, catchProbability: 1 },  // ⚙️ TWEAK: 15% catch chance
+                easy: { alienSpeed: 20, reactionTime: 45, catchRadius: 40, predictionAccuracy: 0.55, catchProbability: 1 },  // ⚙️ TWEAK: 15% catch chance
                 normal: { alienSpeed: 25, reactionTime: 45, catchRadius: 140, predictionAccuracy: 0.75, catchProbability: 1 },  // ⚙️ TWEAK: 40% catch chance
-                hard: { alienSpeed: 50, reactionTime: 45, catchRadius: 40, predictionAccuracy: 0.9, catchProbability: 1 }  // ⚙️ TWEAK: 70% catch chance
+                hard: { alienSpeed: 50, reactionTime: 45, catchRadius: 240, predictionAccuracy: 0.9, catchProbability: 3 }  // ⚙️ TWEAK: 70% catch chance
             }
         };
 
@@ -639,7 +639,8 @@
                 } else if (!alien.movingToTarget) {
                     const accuracy = difficultySettings.predictionAccuracy;
                     const predictedX = ball.x + ball.vx * (ball.z / ball.vz) * accuracy;
-                    const error = (Math.random() - 0.5) * (100 * (1 - accuracy));
+                    const error = (Math.random() - 0.5) * (10 * (1 - accuracy));
+                    alien.targetX = predictedX + error;
                     alien.movingToTarget = true;
                 }
                 if (alien.movingToTarget) {
@@ -647,8 +648,8 @@
                     alien.x += Math.sign(dx) * Math.min(Math.abs(dx), difficultySettings.alienSpeed);
                 }
             } else {
-                if (Math.abs(alien.x - alien.targetX) < 1) alien.targetX = (Math.random() - 0.5) * 1000; // ⚡ FIX: INCREASED wander range from 10 to 1000
-                alien.x += (alien.targetX - alien.x) * 0.4;  // ⚡ FIX: INCREASED speed from 0 to 0.1
+                if (Math.abs(alien.x - alien.targetX) < 1) alien.targetX = (Math.random() - 0.5) * 1600; // ⚡ FIX: INCREASED wander range from 10 to 1000
+                alien.x += (alien.targetX - alien.x) * 0.15  // ⚡ FIX: INCREASED speed from 0 to 0.1
             }
 
             // Ball Physics
