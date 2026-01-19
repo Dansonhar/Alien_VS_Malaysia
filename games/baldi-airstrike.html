@@ -93,12 +93,13 @@
             </div>
         </div>
 
-        <!-- MENU BUTTON -->
-        <button onclick="checkReturnToMenu()"
-            class="pointer-events-auto bg-gray-200 hover:bg-white text-black text-3xl font-bold p-4 rounded-xl border-[6px] border-black shadow-[4px_4px_0_#000] active:translate-y-1 active:shadow-none transition-all">
-            🏠 MENU
-        </button>
     </div>
+
+    <!-- MENU BUTTON -->
+    <button onclick="checkReturnToMenu()"
+        class="fixed bottom-4 left-4 z-[100] pointer-events-auto bg-gray-200 hover:bg-white text-black text-3xl font-bold p-4 rounded-xl border-[6px] border-black shadow-[4px_4px_0_#000] active:translate-y-1 active:shadow-none transition-all">
+        🏠 MENU
+    </button>
 
     <!-- GAME CANVAS -->
     <canvas id="gameCanvas" class="block w-full h-full absolute inset-0 z-10"></canvas>
