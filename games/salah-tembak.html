@@ -338,8 +338,8 @@
     <!-- Back Button -->
     <!-- Back Button -->
     <button onclick="handleBackButton()"
-        class="fixed bottom-8 left-8 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-12 py-6 rounded-2xl border-[10px] border-black shadow-[8px_8px_0_#000] hover:shadow-[4px_4px_0_#000] hover:translate-y-[4px] transition-all flex items-center gap-4 pointer-events-auto">
-        <span class="text-3xl">🔙</span> <span class="text-3xl">MENU</span>
+        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
+        <span class="text-2xl">🏠</span> BACK TO MENU
     </button>
 
     <script>
@@ -381,21 +381,21 @@
         // Asset paths
         const ASSETS = {
             // Aliens (randomized)
-            alienBlueAnt: '../assets/alien_blue_ant.png',
-            alienOrangeTall: '../assets/alien_orange_tall.png',
-            alienRedRound: '../assets/alien_red_round.png',
-            alienGreenEyes: '../assets/green alien with big eyes.png',
+            alienBlueAnt: '../public/assets/alien_blue_ant.png',
+            alienOrangeTall: '../public/assets/alien_orange_tall.png',
+            alienRedRound: '../public/assets/alien_red_round.png',
+            alienGreenEyes: '../public/assets/green alien with big eyes.png',
 
             // Malaysians (randomized)
-            pakcikSongkok: '../assets/pakcik with songkok.png',
-            uncleBatik: '../assets/malaysian uncle in batik shirt.png',
-            malaysianFemale: '../assets/malaysian_female_v2.png',
+            pakcikSongkok: '../public/assets/pakcik with songkok.png',
+            uncleBatik: '../public/assets/malaysian uncle in batik shirt.png',
+            malaysianFemale: '../public/assets/malaysian_female_v2.png',
 
             // Effects
-            redFlash: '../assets/Red_flash.png',
+            redFlash: '../public/assets/Red_flash.png',
 
-            durian: '../assets/durian.png',
-            heroBanner: '../assets/hero-banner-final.jpg'
+            durian: '../public/assets/durian.png',
+            heroBanner: '../public/assets/hero-banner-final.jpg'
         };
 
         // Preload images
@@ -468,7 +468,7 @@
 
         function handleBackButton() {
             if (gamePhase === 'menu') {
-                window.location.href = '../';
+                if (confirm("Exit to main menu?")) window.location.href = '../index.html';
             } else {
                 returnToMainMenu();
             }

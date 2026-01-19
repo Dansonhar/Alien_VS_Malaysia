@@ -161,12 +161,12 @@
             alien: new Image(),
             malaysian: new Image()
         };
-        ASSETS.stadium.src = '../assets/goal_stadium_bg.jpg';
-        ASSETS.goal.src = '../assets/goal_v3.png';
-        ASSETS.alien.src = '../assets/alien_purple_v2.png';
-        ASSETS.malaysian.src = '../assets/malaysian_male.png';
+        ASSETS.stadium.src = '../public/assets/goal_stadium_bg.jpg';
+        ASSETS.goal.src = '../public/assets/goal_v3.png';
+        ASSETS.alien.src = '../public/assets/alien_purple_v2.png';
+        ASSETS.malaysian.src = '../public/assets/malaysian_male.png';
         ASSETS.ball = new Image();
-        ASSETS.ball.src = '../assets/ball.png'; // USER: Replace this file to change ball!
+        ASSETS.ball.src = '../public/assets/ball.png'; // USER: Replace this file to change ball!
 
         // Feedback Phrases
         const BLOCK_PHRASES = ["TAK KENA! HAHA", "LEMAH!", "TRY HARD!", "DAH AGAK!", "BOLEH BLAH!"];
@@ -382,6 +382,7 @@
         }
 
         function startPlayerTurn() {
+            document.getElementById('menuOverlay').classList.add('hidden'); // Fix: Remove dark overlay
             document.getElementById('turnScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
             document.getElementById('playerText').textContent = `PLAYER ${currentPlayer}`;

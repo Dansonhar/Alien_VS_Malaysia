@@ -4,21 +4,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Baldi Airstrike - Aliens vs Malaysians</title>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <title>Baldi Airstrike: Lawak Langit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { 'fredoka': ['Fredoka', 'sans-serif'] },
-                    colors: { 'sambal': '#FF5252', 'durian': '#FFD600', 'pandan': '#00E676' }
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'wiggle': 'wiggle 1s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-3deg)' },
+                            '50%': { transform: 'rotate(3deg)' },
+                        }
+                    }
                 }
             }
         }
     </script>
     <style>
-        @keyframes scrollBackground {
+        .game-text {
+            text-shadow: 4px 4px 0px black;
+        }
+
+        .popup-text {
+            animation: popScale 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popScale {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Background Scroll */
+        @keyframes scrollSky {
             from {
                 background-position: 0 0;
             }
@@ -28,68 +58,227 @@
             }
         }
 
-        .animate-scroll-bg {
-            animation: scrollBackground 20s linear infinite;
+        .scrolling-bg {
+            animation: scrollSky 60s linear infinite;
         }
     </style>
 </head>
 
-<body
-    class="font-fredoka bg-[url('/assets/baldi-sky-bg.png')] animate-scroll-bg bg-cover bg-center min-h-screen overflow-hidden touch-none select-none">
+<body class="font-fredoka bg-sky-300 overflow-hidden touch-none select-none">
+
+    <!-- Background Layer (Clouds moving down to simulate going up?) or just static sky for simplicity as "Airstrike" implies looking up -->
+    <!-- But user said aliens float UP. So maybe background clouds move DOWN. -->
+    <div
+        class="fixed inset-0 bg-[url('../public/assets/baldi-sky-bg.png')] bg-cover bg-center scrolling-bg opacity-80 pointer-events-none">
+    </div>
 
     <!-- HUD -->
-    <!-- HUD -->
-    <div id="hud" class="hidden fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-4 pointer-events-none">
-        <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
-            SCORE: <span id="score" class="text-pandan">0</span>
+    <div id="hud" class="hidden fixed top-0 w-full p-6 flex justify-between items-start z-50 pointer-events-none">
+
+        <!-- P1 Score -->
+        <div class="flex flex-col items-center">
+            <div id="p1Label"
+                class="bg-blue-500 text-white px-6 py-2 rounded-t-xl border-4 border-black border-b-0 font-bold text-2xl">
+                PLAYER 1</div>
+            <div class="bg-white px-8 py-4 rounded-3xl border-[6px] border-black shadow-[6px_6px_0_#000]">
+                <span id="scoreDisplay" class="text-6xl font-black text-blue-500 game-text">0</span>
+            </div>
         </div>
-        <div class="bg-white/90 px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-lg">
-            <span id="timer" class="text-sambal">60</span>s
+
+        <!-- Timer -->
+        <div class="flex flex-col items-center mt-2">
+            <div class="bg-red-500 text-white px-8 py-3 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000]">
+                <span id="timeDisplay" class="text-5xl font-black game-text">60</span><span
+                    class="text-2xl font-bold">s</span>
+            </div>
         </div>
-    </div>
 
-    <canvas id="gameCanvas" class="block w-full h-screen"></canvas>
-
-    <!-- Start Screen -->
-    <div id="startScreen"
-        class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1 class="text-5xl md:text-6xl font-bold text-sky-400 drop-shadow-[0_4px_0_#000] mb-4">
-            🚿 BALDI AIRSTRIKE
-        </h1>
-        <p class="text-white text-xl mb-8">Drop water on parachuting aliens!<br>Don't let them land dry!</p>
-        <button onclick="startGame()"
-            class="bg-blue-500 text-white font-bold text-2xl px-12 py-4 rounded-full border-4 border-white shadow-[0_8px_0_#1565C0] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#1565C0] transition-all">
-            START MISSION
+        <!-- MENU BUTTON -->
+        <button onclick="checkReturnToMenu()"
+            class="pointer-events-auto bg-gray-200 hover:bg-white text-black text-3xl font-bold p-4 rounded-xl border-[6px] border-black shadow-[4px_4px_0_#000] active:translate-y-1 active:shadow-none transition-all">
+            🏠 MENU
         </button>
     </div>
 
-    <!-- End Screen -->
-    <div id="endScreen"
-        class="hidden fixed inset-0 bg-black/80 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1 class="text-5xl md:text-6xl font-bold text-sambal drop-shadow-[0_4px_0_#000] mb-4">
-            MISSION ENDED!
-        </h1>
-        <p class="text-white text-2xl mb-4">Aliens Soaked:</p>
-        <div id="finalScore" class="text-7xl font-bold text-sky-400 drop-shadow-[0_4px_0_#000] mb-8">0</div>
-        <button onclick="startGame()"
-            class="bg-pandan text-white font-bold text-2xl px-12 py-4 rounded-full border-4 border-white shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all">
-            PLAY AGAIN
-        </button>
-        <button onclick="window.location.href='../'"
-            class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
-            BACK TO MENU
-        </button>
+    <!-- GAME CANVAS -->
+    <canvas id="gameCanvas" class="block w-full h-full absolute inset-0 z-10"></canvas>
+
+    <!-- UI OVERLAYS -->
+    <div id="uiLayer" class="absolute inset-0 z-50 pointer-events-none flex flex-col justify-center items-center">
+
+        <!-- START SCREEN -->
+        <div id="startScreen"
+            class="absolute inset-0 bg-black/70 flex flex-col items-center justify-center pointer-events-auto backdrop-blur-sm">
+
+            <h1 class="text-8xl md:text-9xl font-black text-yellow-400 mb-2 game-text text-center leading-tight">
+                BALDI<br><span class="text-white">AIRSTRIKE</span>
+            </h1>
+            <p class="text-4xl text-sky-300 font-bold mb-8 game-text mt-4">LAWAK LANGIT 🌤️</p>
+
+            <!-- DIFFICULTY SELECTOR -->
+            <div class="flex gap-4 mb-8">
+                <button id="btnEasy" onclick="setDifficulty('easy')"
+                    class="bg-green-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-green-800 hover:scale-105 transition-all opacity-60">EASY</button>
+                <button id="btnNormal" onclick="setDifficulty('normal')"
+                    class="bg-yellow-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-yellow-800 hover:scale-105 transition-all border-white shadow-[0_0_20px_white]">NORMAL</button>
+                <button id="btnHard" onclick="setDifficulty('hard')"
+                    class="bg-red-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-red-800 hover:scale-105 transition-all opacity-60">HARD</button>
+            </div>
+
+            <div class="flex gap-8">
+                <button onclick="startGame(1)"
+                    class="bg-blue-500 hover:bg-blue-400 text-white text-5xl font-black py-8 px-16 rounded-3xl border-[8px] border-blue-900 shadow-[0_10px_0_#1e3a8a] active:translate-y-2 active:shadow-none hover:scale-105 transition-all">
+                    👤 1 PLAYER
+                </button>
+                <button onclick="startGame(2)"
+                    class="bg-orange-500 hover:bg-orange-400 text-white text-5xl font-black py-8 px-16 rounded-3xl border-[8px] border-orange-900 shadow-[0_10px_0_#7c2d12] active:translate-y-2 active:shadow-none hover:scale-105 transition-all">
+                    👥 2 PLAYERS
+                </button>
+            </div>
+            <p class="text-white text-2xl mt-12 font-bold opacity-80 animate-pulse">
+                "ALIENS DATANG LAGI 😱 CEPAT BALING!!"
+            </p>
+            <button onclick="window.location.href='../index.html'"
+                class="mt-8 text-white/50 text-xl font-bold hover:text-white underline">Back to Hub</button>
+        </div>
+
+        <!-- TURN TRANSITION (For 2P) -->
+        <div id="turnScreen"
+            class="hidden absolute inset-0 bg-black/90 flex flex-col items-center justify-center pointer-events-auto">
+            <h2 class="text-7xl font-black text-white mb-6 game-text">TIME'S UP!</h2>
+            <div class="bg-blue-600 p-8 rounded-3xl border-[8px] border-white mb-10 transform -rotate-2">
+                <p class="text-3xl text-blue-200 font-bold mb-2">PLAYER 1 SCORE:</p>
+                <p id="p1TurnScore" class="text-8xl font-black text-white game-text">0</p>
+            </div>
+
+            <h1 class="text-8xl font-black text-yellow-400 mb-12 game-text animate-bounce">PLAYER 2 READY?</h1>
+
+            <button onclick="startP2Turn()"
+                class="bg-green-500 hover:bg-green-400 text-white text-6xl font-black py-8 px-20 rounded-full border-[8px] border-green-800 shadow-[0_10px_0_#14532d] active:translate-y-2 active:shadow-none transition-all">
+                START! 🔥
+            </button>
+        </div>
+
+        <!-- END SCREEN -->
+        <div id="endScreen"
+            class="hidden absolute inset-0 bg-black/80 flex flex-col items-center justify-center pointer-events-auto">
+            <div id="resultContent" class="text-center">
+                <!-- Content injected via JS -->
+            </div>
+
+            <div class="flex gap-6 mt-12">
+                <button onclick="location.reload()"
+                    class="bg-green-500 hover:bg-green-400 text-white text-4xl font-black py-6 px-12 rounded-2xl border-[6px] border-green-900 shadow-[0_8px_0_#14532d] active:translate-y-2 active:shadow-none">
+                    MAIN MENU 🏠
+                </button>
+            </div>
+        </div>
+
+        <!-- QUIT CONFIRMATION MODAL -->
+        <div id="quitModal"
+            class="hidden absolute inset-0 bg-black/90 flex flex-col items-center justify-center pointer-events-auto z-[60]">
+            <h2 class="text-6xl font-black text-white mb-8 game-text">QUIT GAME?</h2>
+            <div class="flex gap-8">
+                <button onclick="confirmQuit()"
+                    class="bg-red-500 hover:bg-red-400 text-white text-4xl font-black py-6 px-12 rounded-2xl border-[6px] border-red-900 shadow-[0_8px_0_#7f1d1d] active:translate-y-2 active:shadow-none">
+                    YES 🚪
+                </button>
+                <button onclick="cancelQuit()"
+                    class="bg-green-500 hover:bg-green-400 text-white text-4xl font-black py-6 px-12 rounded-2xl border-[6px] border-green-900 shadow-[0_8px_0_#14532d] active:translate-y-2 active:shadow-none">
+                    NO ❌
+                </button>
+            </div>
+        </div>
+
     </div>
 
-    <button onclick="window.location.href='../'"
-        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
-        <span class="text-2xl">🏠</span> BACK TO MENU
-    </button>
-
+    <!-- LOGIC -->
     <script>
+
+
+        function checkReturnToMenu() {
+            // Stop game loop temporarily? Maybe not needed for simple pause
+            document.getElementById('quitModal').classList.remove('hidden');
+        }
+
+        function confirmQuit() {
+            window.location.href = '../index.html';
+        }
+
+        function cancelQuit() {
+            document.getElementById('quitModal').classList.add('hidden');
+        }
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // --- ASSETS ---
+        const ASSETS = {
+            aliens: [
+                '../public/assets/green alien with big eyes.png',
+                '../public/assets/alien_blue_ant.png',
+                '../public/assets/alien_orange_tall.png',
+                '../public/assets/alien_red_round.png',
+            ],
+            items: [
+                '../public/assets/pakcik with songkok.png',
+                '../public/assets/malaysian uncle in batik shirt.png',
+                '../public/assets/aunty with handbag.png'
+            ],
+            hitSound: 'boing', // Placeholder
+        };
+
+        const alienImages = [];
+        const itemImages = [];
+
+        // Load Images
+        ASSETS.aliens.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            // Fallback if file not found
+            img.onerror = () => { img.src = '../public/assets/alien_purple_v2.png'; };
+            alienImages.push(img);
+        });
+
+        ASSETS.items.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            itemImages.push(img);
+        });
+
+        // --- GAME VARIABLES ---
         let width, height;
+        let gameState = 'MENU'; // MENU, PLAYING, TRANSITION, END
+        let numPlayers = 1;
+        let currentPlayer = 1;
+        let time = 60;
+        let score = 0;
+        let p1Score = 0;
+        let p2Score = 0;
+        let entities = []; // Aliens and Items
+        let particles = [];
+        let popups = []; // Text effects
+        let lastTime = 0;
+        let spawnTimer = 0;
+        let difficulty = 'normal';
+        let alienSpeedMult = 1.0;
+
+        function setDifficulty(mode) {
+            difficulty = mode;
+            // Update UI
+            document.getElementById('btnEasy').className = `bg-green-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-green-800 hover:scale-105 transition-all ${mode === 'easy' ? 'border-white shadow-[0_0_20px_white]' : 'opacity-60'}`;
+            document.getElementById('btnNormal').className = `bg-yellow-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-yellow-800 hover:scale-105 transition-all ${mode === 'normal' ? 'border-white shadow-[0_0_20px_white]' : 'opacity-60'}`;
+            document.getElementById('btnHard').className = `bg-red-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-red-800 hover:scale-105 transition-all ${mode === 'hard' ? 'border-white shadow-[0_0_20px_white]' : 'opacity-60'}`;
+
+            // Set Speed Multiplier
+            if (mode === 'easy') alienSpeedMult = 0.7;
+            else if (mode === 'normal') alienSpeedMult = 1.0;
+            else if (mode === 'hard') alienSpeedMult = 1.5;
+        }
+
+        // --- CONSTANTS ---
+        const LAWAK_PHRASES = ["AIYOOO 😵", "BYE BYE!", "BALIK KG!", "ADUH!", "KACAU JE!"];
+        const ITEM_PHRASES = ["ADUII! 🤕", "APA NI?!", "SAKIT LA!", "TOLONG!", "MARAH NI! 😡"];
 
         function resize() {
             width = canvas.width = window.innerWidth;
@@ -98,206 +287,333 @@
         window.addEventListener('resize', resize);
         resize();
 
-        let gameRunning = false;
-        let score = 0;
-        let timeLeft = 60;
-        let aliens = [];
-        let drops = [];
-        let particles = [];
-        let timerInterval;
-        let spawnRate = 60;
-        let frameCount = 0;
+        // --- CLASSES ---
+        class Entity {
+            constructor(type, x, y, img) {
+                this.type = type; // 'alien' or 'item'
+                this.x = x;
+                this.y = y;
+                this.img = img;
+                this.width = 100;
+                this.height = 100;
+                // USER: ADJUST ALIEN SPEED HERE (Base speed)
+                // Multiplier (alienSpeedMult) comes from Difficulty (Easy=0.7, Normal=1.0, Hard=1.5)
+                this.speedY = (1 + Math.random() * 8) * alienSpeedMult; // Float up
 
-        class Alien {
-            constructor() {
-                this.x = Math.random() * (width - 60) + 30;
-                this.y = -100;
-                this.vy = 1 + Math.random();
-                this.size = 60;
-                this.wet = false;
-                this.sway = Math.random() * 1000;
+                this.wobbleOffset = Math.random() * 100;
+                this.wobbleSpeed = 0.05 + Math.random() * 0.05;
+                this.rotation = (Math.random() - 0.5) * 0.2;
+
+                if (type === 'item') {
+                    this.speedY += 5; // Items move faster
+                    // USER: ADJUST UNCLE/AUNTIE SIZE HERE
+                    // Was 80, Increase to make them bigger (e.g. 120)
+                    this.width = 320;
+                    this.height = 320;
+                } else {
+                    // Random alien sizes
+                    // USER: ADJUST ALIEN SIZE HERE
+                    // Change 0.8 (min scale) and 0.5 (random range)
+                    const scale = 0.8 + Math.random() * 0.5;
+
+                    // Base dimensions (Change 100/120 to make them wider/taller)
+                    this.width = 300 * scale;
+                    this.height = 320 * scale;
+                }
             }
+
             update() {
-                this.y += this.vy;
-                this.x += Math.sin((Date.now() + this.sway) / 500) * 0.5;
-                if (this.wet) {
-                    this.vy += 0.2; // Fall faster when wet
-                    this.size *= 0.98; // Shrink
-                }
+                this.y -= this.speedY; // Move UP
+                this.x += Math.sin(this.y * 0.01 + this.wobbleOffset) * 2; // Wobbly physics
+
+                // Cleanup if off top
+                if (this.y < -150) return false; // Remove
+                return true;
             }
-            draw() {
-                ctx.save(); ctx.translate(this.x, this.y);
 
-                if (!this.wet) {
-                    // Parachute
-                    ctx.fillStyle = '#FF5252';
-                    ctx.beginPath(); ctx.arc(0, -40, 40, Math.PI, 0); ctx.fill();
-                    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
-                    ctx.beginPath(); ctx.moveTo(-35, -40); ctx.lineTo(0, 0); ctx.stroke();
-                    ctx.beginPath(); ctx.moveTo(35, -40); ctx.lineTo(0, 0); ctx.stroke();
-                }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(Math.sin(Date.now() * 0.003 + this.wobbleOffset) * 0.1);
 
-                // Alien
-                ctx.fillStyle = this.wet ? '#0288D1' : '#76FF03';
-                ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fill();
-
-                // Eyes
-                ctx.fillStyle = '#000';
-                ctx.beginPath(); ctx.arc(-7, -5, 3, 0, Math.PI * 2); ctx.arc(7, -5, 3, 0, Math.PI * 2); ctx.fill();
-
-                if (this.wet) {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-                    ctx.beginPath(); ctx.arc(5, -5, 5, 0, Math.PI * 2); ctx.fill();
+                // Draw Image
+                if (this.img && this.img.complete) {
+                    ctx.drawImage(this.img, -this.width / 2, -this.height / 2, this.width, this.height);
+                } else {
+                    // Fallback
+                    ctx.fillStyle = this.type === 'alien' ? '#A855F7' : '#FBBF24';
+                    ctx.beginPath(); ctx.arc(0, 0, 40, 0, Math.PI * 2); ctx.fill();
                 }
 
                 ctx.restore();
             }
-        }
 
-        class Drop {
-            constructor(x, y) {
-                this.x = x; this.y = y;
-                this.vy = 0;
-                this.radius = 10;
-            }
-            update() {
-                this.y += this.vy;
-                this.vy += 0.5; // Gravity
-            }
-            draw() {
-                ctx.save(); ctx.translate(this.x, this.y);
-                ctx.fillStyle = '#29B6F6';
-                ctx.beginPath();
-                ctx.moveTo(0, -this.radius);
-                ctx.bezierCurveTo(this.radius, -this.radius, this.radius, this.radius, 0, this.radius);
-                ctx.bezierCurveTo(-this.radius, this.radius, -this.radius, -this.radius, 0, -this.radius);
-                ctx.fill();
-                ctx.restore();
+            checkHit(x, y) {
+                // Circular collision for simplicty
+                const dx = x - this.x;
+                const dy = y - this.y;
+                return (dx * dx + dy * dy) < (this.width / 2 + 20) ** 2; // Generous hit box
             }
         }
 
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y;
-                this.vx = (Math.random() - 0.5) * 10;
-                this.vy = (Math.random() - 0.5) * 10;
-                this.life = 1;
+        class Popup {
+            constructor(text, x, y, color) {
+                this.text = text;
+                this.x = x;
+                this.y = y;
+                this.life = 1.0;
                 this.color = color;
+                this.vy = -2;
+                this.scale = 0;
             }
             update() {
-                this.x += this.vx; this.y += this.vy;
-                this.life -= 0.05;
-                this.vy += 0.2;
+                this.y += this.vy;
+                this.life -= 0.02;
+                if (this.scale < 1.5) this.scale += 0.2;
+                return this.life > 0;
             }
-            draw() {
-                ctx.globalAlpha = this.life;
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.scale(this.scale, this.scale);
                 ctx.fillStyle = this.color;
-                ctx.beginPath(); ctx.arc(this.x, this.y, 5, 0, Math.PI * 2); ctx.fill();
-                ctx.globalAlpha = 1;
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 4;
+                ctx.font = "900 60px Fredoka";
+                ctx.textAlign = "center";
+                ctx.strokeText(this.text, 0, 0);
+                ctx.fillText(this.text, 0, 0);
+                ctx.restore();
             }
         }
 
-        function createSplash(x, y) {
-            for (let i = 0; i < 10; i++) particles.push(new Particle(x, y, '#4FC3F7'));
-        }
+        // --- CORE FUNCTIONS ---
 
-        function startGame() {
-            score = 0; timeLeft = 60;
-            aliens = []; drops = []; particles = [];
-            gameRunning = true;
-            document.getElementById('score').textContent = score;
-            document.getElementById('timer').textContent = timeLeft;
+        function startGame(players) {
+            numPlayers = players;
+            currentPlayer = 1;
+            p1Score = 0;
+            p2Score = 0;
+
+            // UI
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('endScreen').classList.add('hidden');
             document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('p1Label').textContent = numPlayers === 1 ? "PLAYER" : "PLAYER 1";
 
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                timeLeft--; document.getElementById('timer').textContent = timeLeft;
-                if (timeLeft <= 0) endGame();
-            }, 1000);
-
+            startRound();
+            lastTime = performance.now();
             requestAnimationFrame(loop);
         }
 
-        function endGame() {
-            gameRunning = false;
-            clearInterval(timerInterval);
-            document.getElementById('hud').classList.add('hidden');
-            document.getElementById('finalScore').textContent = score;
-            document.getElementById('endScreen').classList.remove('hidden');
+        function startRound() {
+            gameState = 'PLAYING';
+            time = 60; // 60s round
+            score = 0;
+            entities = [];
+            particles = [];
+            popups = [];
+
+            document.getElementById('scoreDisplay').textContent = 0;
+            document.getElementById('p1Label').textContent = numPlayers === 1 ? "PLAYER" : `PLAYER ${currentPlayer}`;
+            document.getElementById('p1Label').className = currentPlayer === 1
+                ? "bg-blue-500 text-white px-6 py-2 rounded-t-xl border-4 border-black border-b-0 font-bold text-2xl"
+                : "bg-orange-500 text-white px-6 py-2 rounded-t-xl border-4 border-black border-b-0 font-bold text-2xl";
         }
 
-        canvas.addEventListener('mousedown', (e) => {
-            if (!gameRunning) return;
-            spawnDrop(e.clientX, e.clientY);
-        });
+        function endRound() {
+            if (numPlayers === 1) {
+                showEndScreen();
+            } else {
+                if (currentPlayer === 1) {
+                    // Go to P2
+                    p1Score = score;
+                    currentPlayer = 2;
+                    gameState = 'TRANSITION';
 
-        canvas.addEventListener('touchstart', (e) => {
-            if (!gameRunning) return;
-            e.preventDefault();
-            spawnDrop(e.touches[0].clientX, e.touches[0].clientY);
-        });
-
-        function spawnDrop(x, y) {
-            // Spawn a cluster of drops
-            for (let i = 0; i < 3; i++) {
-                drops.push(new Drop(x + (Math.random() - 0.5) * 40, 50));
+                    const screen = document.getElementById('turnScreen');
+                    screen.classList.remove('hidden');
+                    document.getElementById('hud').classList.add('hidden');
+                    document.getElementById('p1TurnScore').textContent = p1Score;
+                } else {
+                    // P2 Done
+                    p2Score = score;
+                    showEndScreen();
+                }
             }
         }
 
-        function loop() {
-            if (!gameRunning) return;
+        function startP2Turn() {
+            document.getElementById('turnScreen').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            startRound();
+        }
+
+        function showEndScreen() {
+            gameState = 'END';
+            document.getElementById('hud').classList.add('hidden');
+            const screen = document.getElementById('endScreen');
+            screen.classList.remove('hidden');
+
+            const content = document.getElementById('resultContent');
+            if (numPlayers === 1) {
+                let msg = score > 1000 ? "WAH HEBAT LA! 🎉" : "AIYAA TRY LAGI 😆";
+                content.innerHTML = `
+                    <h1 class="text-7xl font-black text-white mb-4 game-text text-yellow-400">GAME OVER!</h1>
+                    <p class="text-4xl text-white mb-2">${msg}</p>
+                    <div class="bg-white/10 p-8 rounded-3xl mt-6 border-4 border-white">
+                        <p class="text-2xl text-white">FINAL SCORE</p>
+                        <p class="text-8xl font-black text-green-400 game-text">${score}</p>
+                    </div>
+                `;
+            } else {
+                let winner = p1Score > p2Score ? "PLAYER 1" : (p2Score > p1Score ? "PLAYER 2" : "SERI!");
+                let color = p1Score > p2Score ? "text-blue-400" : (p2Score > p1Score ? "text-orange-400" : "text-white");
+
+                content.innerHTML = `
+                    <p class="text-3xl text-white mb-4 font-bold">PEMENANG IALAH...</p>
+                    <h1 class="text-8xl font-black ${color} mb-8 game-text animate-pulse">${winner} WIN!</h1>
+                    <div class="flex gap-12 justify-center">
+                        <div class="text-right">
+                            <p class="text-blue-400 font-bold text-2xl">PLAYER 1</p>
+                            <p class="text-6xl font-black text-white">${p1Score}</p>
+                        </div>
+                        <div class="text-5xl font-black text-white self-center">VS</div>
+                        <div class="text-left">
+                            <p class="text-orange-400 font-bold text-2xl">PLAYER 2</p>
+                            <p class="text-6xl font-black text-white">${p2Score}</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // --- GAME LOOP ---
+        function loop(timestamp) {
+            requestAnimationFrame(loop);
+            const dt = timestamp - lastTime;
+            lastTime = timestamp;
+
+            if (gameState !== 'PLAYING') return;
+
+            // Timer
+            if (Math.floor(time) > 0) {
+                // Simple frame counting for timer or use delta? Using frame count logic in loop is unreliable, let's use setInterval or delta accumulation.
+                // Actually simpler to use a 1s interval for the HUD separately, but for sync lets just do delta.
+                // We'll stick to frame-based for simplicity in this prototype or simple delta accumulation
+            }
+
+        }
+
+        // Add proper timer Logic
+        setInterval(() => {
+            if (gameState === 'PLAYING') {
+                time--;
+                document.getElementById('timeDisplay').textContent = time;
+                if (time <= 0) {
+                    endRound();
+                }
+            }
+        }, 1000);
+
+        function gameUpdate() {
+            if (gameState !== 'PLAYING') return;
+
+            // Spawn Logic
+            spawnTimer++;
+            // USER: ADJUST SPAWN RATE HERE (Frame capacity, lower = faster spawn)
+            let baseRate = 60;
+            if (time < 30) baseRate = 40;
+            if (time < 10) baseRate = 20;
+
+            // Adjust for Difficulty (Harder = Lower rate = Faster spawn)
+            let rate = baseRate / alienSpeedMult;
+
+            if (spawnTimer > rate) {
+                spawnTimer = 0;
+                spawnEntity();
+            }
+
+            // Update Entities
+            entities = entities.filter(e => {
+                return e.update();
+            });
+
+            // Update Particles & Popups
+            popups = popups.filter(p => p.update());
+        }
+
+        function spawnEntity() {
+            const x = Math.random() * (width - 100) + 50;
+            const y = height + 100; // Start below screen
+
+            // 15% chance for item
+            if (Math.random() < 0.15 && itemImages.length > 0) {
+                const img = itemImages[Math.floor(Math.random() * itemImages.length)];
+                entities.push(new Entity('item', x, y, img));
+            } else {
+                const img = alienImages[Math.floor(Math.random() * alienImages.length)];
+                entities.push(new Entity('alien', x, y, img));
+            }
+        }
+
+        function render() {
             ctx.clearRect(0, 0, width, height);
 
-            frameCount++;
-            if (frameCount % spawnRate === 0) aliens.push(new Alien());
-
-            // Drops
-            for (let i = drops.length - 1; i >= 0; i--) {
-                let d = drops[i];
-                d.update(); d.draw();
-
-                if (d.y > height) drops.splice(i, 1);
-                else {
-                    // Check collision
-                    for (let j = aliens.length - 1; j >= 0; j--) {
-                        let a = aliens[j];
-                        if (a.wet) continue;
-                        let dist = Math.hypot(d.x - a.x, d.y - a.y);
-                        if (dist < 40) {
-                            a.wet = true;
-                            score++;
-                            document.getElementById('score').textContent = score;
-                            createSplash(d.x, d.y);
-                            drops.splice(i, 1);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Aliens
-            for (let i = aliens.length - 1; i >= 0; i--) {
-                let a = aliens[i];
-                a.update(); a.draw();
-                if (a.y > height + 50) {
-                    if (!a.wet) {
-                        // Landed dry - maybe penalty?
-                    }
-                    aliens.splice(i, 1);
-                }
-            }
-
-            // Particles
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i];
-                p.update(); p.draw();
-                if (p.life <= 0) particles.splice(i, 1);
-            }
-
-            requestAnimationFrame(loop);
+            entities.forEach(e => e.draw(ctx));
+            popups.forEach(p => p.draw(ctx));
         }
+
+        // Override loop to include update + render
+        function loop(timestamp) {
+            requestAnimationFrame(loop);
+            gameUpdate();
+            render();
+        }
+
+        // --- INput ---
+        function handleInput(x, y) {
+            if (gameState !== 'PLAYING') return;
+
+            // Check Hits
+            for (let i = entities.length - 1; i >= 0; i--) {
+                if (entities[i].checkHit(x, y)) {
+                    // HIT!
+                    const e = entities[i];
+                    entities.splice(i, 1);
+
+                    // Feedback
+                    // Feedback
+                    if (e.type === 'item') {
+                        score += 300;
+                        popups.push(new Popup(getRandom(ITEM_PHRASES), e.x, e.y, '#EF4444')); // Red for Uncle/Auntie
+                    } else {
+                        score += 100;
+                        popups.push(new Popup(getRandom(LAWAK_PHRASES), e.x, e.y, '#4ADE80')); // Green for Aliens
+                    }
+
+                    // Hit Effect (Impact)
+                    // (Omitted particle system for brevity, popup text is main feedback)
+
+                    document.getElementById('scoreDisplay').textContent = score;
+                    return; // Hit one per click
+                }
+            }
+            // Miss effect?
+        }
+
+        function getRandom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        window.addEventListener('mousedown', e => handleInput(e.clientX, e.clientY));
+        window.addEventListener('touchstart', e => {
+            e.preventDefault();
+            for (let i = 0; i < e.touches.length; i++) {
+                handleInput(e.touches[i].clientX, e.touches[i].clientY);
+            }
+        });
+
+
+
     </script>
 </body>
 
