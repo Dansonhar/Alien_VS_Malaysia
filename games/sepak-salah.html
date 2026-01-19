@@ -204,16 +204,16 @@
             BALL_SIZE_MAX: 350,
 
             // Goal Detection
-            GOAL_LEFT_BOUND: 1800,
-            GOAL_RIGHT_BOUND: 1800,
-            GOAL_DEPTH_NEAR: 1000,
-            GOAL_DEPTH_FAR: 2000,
+            GOAL_LEFT_BOUND: 1700,
+            GOAL_RIGHT_BOUND: 1700,
+            GOAL_DEPTH_NEAR: 1200,
+            GOAL_DEPTH_FAR: 3000,
 
             // Difficulty Presets
             DIFFICULTY: {
-                easy: { alienSpeed: 3, reactionTime: 40, catchRadius: 130, predictionAccuracy: 0.6, catchProbability: 0.15 },  // ⚙️ TWEAK: 15% catch chance
-                normal: { alienSpeed: 5, reactionTime: 20, catchRadius: 90, predictionAccuracy: 0.8, catchProbability: 0.40 },  // ⚙️ TWEAK: 40% catch chance
-                hard: { alienSpeed: 8, reactionTime: 8, catchRadius: 60, predictionAccuracy: 0.95, catchProbability: 0.70 }  // ⚙️ TWEAK: 70% catch chance
+                easy: { alienSpeed: 20, reactionTime: 45, catchRadius: 240, predictionAccuracy: 0.55, catchProbability: 1 },  // ⚙️ TWEAK: 15% catch chance
+                normal: { alienSpeed: 25, reactionTime: 45, catchRadius: 140, predictionAccuracy: 0.75, catchProbability: 1},  // ⚙️ TWEAK: 40% catch chance
+                hard: { alienSpeed: 50, reactionTime: 45, catchRadius: 40, predictionAccuracy: 0.9, catchProbability: 1 }  // ⚙️ TWEAK: 70% catch chance
             }
         };
 
@@ -226,7 +226,15 @@
         };
         ASSETS.stadium.src = '../assets/goal_stadium_bg.jpg';
         ASSETS.goal.src = '../assets/goal_v3.png';
-        ASSETS.alien.src = '../assets/alien_purple_v2.png';
+
+        // 🎲 RANDOM ALIEN SELECTION
+        const ALIEN_SPRITES = [
+            '../assets/alien_blue_ant.png',
+            '../assets/alien_red_round.png',
+            '../assets/alien_orange_tall.png',
+        ];
+        ASSETS.alien.src = ALIEN_SPRITES[Math.floor(Math.random() * ALIEN_SPRITES.length)];
+
         ASSETS.ball.src = '../assets/Ball.png';
 
         // PHRASES
@@ -359,7 +367,7 @@
 
         // Physics Objects
         let ball = { x: 0, y: 150, z: -350, vx: 0, vy: 0, vz: 0, state: 'idle', rotation: 0 };
-        let alien = { x: 0, targetX: 0, reactionDelay: 10, movingToTarget: true };
+        let alien = { x: 0, targetX: ball.x, reactionDelay: 0, movingToTarget: false };
         const perspective = 800;
 
         // Asset Loading
@@ -560,7 +568,7 @@
 
         function resetBall() {
             ball = { x: 0, y: 150, z: -350, vx: 0, vy: 0, vz: 0, state: 'idle', rotation: 0 };
-            alien.x = 0;
+            alien.x = ball.x;
             alien.targetX = 0;
             alien.reactionDelay = difficultySettings.reactionTime; // Reset reaction
             alien.movingToTarget = true;
@@ -582,7 +590,7 @@
             SOUNDS.kick();  // 🔊 Kick sound
 
             alien.reactionDelay = difficultySettings.reactionTime;
-            alien.movingToTarget = true;
+            alien.movingToTarget = false; // ⚡ FIX: False so it recalculates target after delay
         }
 
         canvas.addEventListener('mousedown', e => handleInput(e.clientX, e.clientY));
@@ -590,7 +598,7 @@
 
         // Particles & Popups
         class Particle {
-            constructor(x, y, color, speedScale = 1) {
+            constructor(x, y, color, speedScale = 100) {
                 this.x = x; this.y = y; this.color = color;
                 this.vx = (Math.random() - 0.5) * 10 * speedScale;
                 this.vy = (Math.random() - 1) * 10 * speedScale;
@@ -598,7 +606,6 @@
             }
             update() { this.x += this.vx; this.y += this.vy; this.vy += this.gravity; this.life -= 0.03; }
             draw(ctx) {
-                ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color;
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
             }
         }
@@ -637,7 +644,6 @@
                     const accuracy = difficultySettings.predictionAccuracy;
                     const predictedX = ball.x + ball.vx * (ball.z / ball.vz) * accuracy;
                     const error = (Math.random() - 0.5) * (100 * (1 - accuracy));
-                    alien.targetX = Math.max(-400, Math.min(400, predictedX + error));
                     alien.movingToTarget = true;
                 }
                 if (alien.movingToTarget) {
@@ -645,8 +651,8 @@
                     alien.x += Math.sign(dx) * Math.min(Math.abs(dx), difficultySettings.alienSpeed);
                 }
             } else {
-                if (Math.abs(alien.x - alien.targetX) < 10) alien.targetX = (Math.random() - 0.5) * 1000;
-                alien.x += (alien.targetX - alien.x) * 0.15;  // ⚡ INCREASED from 0.05 to 0.2 for faster idle movement
+                if (Math.abs(alien.x - alien.targetX) < 1) alien.targetX = (Math.random() - 0.5) * 1000; // ⚡ FIX: INCREASED wander range from 10 to 1000
+                alien.x += (alien.targetX - alien.x) * 0.4;  // ⚡ FIX: INCREASED speed from 0 to 0.1
             }
 
             // Ball Physics
@@ -734,11 +740,11 @@
             ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(0, horizonY); ctx.lineTo(width, horizonY); ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.fill();
 
             // Alien
-            const goalZ = 330;
-            const pAlien = project(alien.x, 200, goalZ);
+            const goalZ = 400;
+            const pAlien = project(alien.x, 350, goalZ);
             if (ASSETS.alien.complete) {
-                const aw = 400 * pAlien.scale; const ah = 400 * pAlien.scale;
-                ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(pAlien.x, pAlien.y, aw / 2, aw / 5, 0, 0, Math.PI * 2); ctx.fill();
+                const aw = 700 * pAlien.scale; const ah = 700 * pAlien.scale;
+                ctx.fillStyle = 'rgba(0,0,0,0.0)'; ctx.beginPath(); ctx.ellipse(pAlien.x, pAlien.y, aw / 2, aw / 5, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.drawImage(ASSETS.alien, pAlien.x - aw / 2, pAlien.y - ah, aw, ah);
             }
 
