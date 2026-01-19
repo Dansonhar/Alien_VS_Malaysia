@@ -255,6 +255,46 @@
             itemImages.push(img);
         });
 
+        // === AUDIO SYSTEM ===
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const BGM = new Audio('../assets/Funnysound.wav');
+        BGM.loop = true;
+        BGM.volume = 0.1;
+
+        const SFX = {
+            funny1: () => { // Boing/Spring sound (Aliens)
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.2);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.4);
+            },
+            funny2: () => { // Quack-like sound (Humans)
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.2);
+            }
+        };
+
+        function initAudio() {
+            if (BGM.paused) BGM.play().catch(e => console.log(e));
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
         // --- GAME VARIABLES ---
         let width, height;
         let gameState = 'MENU'; // MENU, PLAYING, TRANSITION, END
@@ -440,6 +480,9 @@
             document.getElementById('hud').classList.remove('hidden');
             document.getElementById('p1Label').textContent = numPlayers === 1 ? "PLAYER" : "PLAYER 1";
 
+            document.getElementById('p1Label').textContent = numPlayers === 1 ? "PLAYER" : "PLAYER 1";
+
+            initAudio(); // 🔊 Start Audio
             startRound();
             lastTime = performance.now();
             requestAnimationFrame(loop);
@@ -629,11 +672,13 @@
                     // Feedback
                     // Feedback
                     if (e.type === 'item') {
-                        score += 300;
+                        score -= 300;
                         popups.push(new Popup(getRandom(ITEM_PHRASES), e.x, e.y, '#EF4444')); // Red for Uncle/Auntie
+                        SFX.funny2(); // 🦆 Quack sound for Humans
                     } else {
                         score += 100;
                         popups.push(new Popup(getRandom(LAWAK_PHRASES), e.x, e.y, '#4ADE80')); // Green for Aliens
+                        SFX.funny1(); // 🌀 Boing sound for Aliens
                     }
 
                     // Hit Effect (Impact)

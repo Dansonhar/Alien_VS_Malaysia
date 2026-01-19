@@ -337,6 +337,24 @@
     <p>Made with ❤️ by Malaysians, for Malaysians</p>
   </footer>
 
+  <script>
+    // === HOMEPAGE AUDIO ===
+    const BGM = new Audio('./assets/Homepage.wav');
+    BGM.loop = true;
+    BGM.volume = 0.5;
+
+    // Browser policy: Audio can only start after user interaction
+    function initAudio() {
+      BGM.play().catch(error => {
+        console.log("Audio play failed (waiting for interaction):", error);
+      });
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('touchstart', initAudio);
+    }
+
+    document.addEventListener('click', initAudio);
+    document.addEventListener('touchstart', initAudio);
+  </script>
 </body>
 
 </html>

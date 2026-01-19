@@ -238,6 +238,113 @@
             return list[Math.floor(Math.random() * list.length)];
         }
 
+        // === SOUND SYSTEM (Web Audio API) ===
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        const SOUNDS = {
+            kick: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(200, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.1);
+            },
+            bounce: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(100, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.05);
+            },
+            block: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, audioContext.currentTime);
+                gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.15);
+            },
+            goal: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(400, audioContext.currentTime);
+                osc.frequency.setValueAtTime(500, audioContext.currentTime + 0.1);
+                osc.frequency.setValueAtTime(600, audioContext.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.25, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.4);
+            },
+            miss: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(200, audioContext.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.15, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.3);
+            },
+            countdown: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(600, audioContext.currentTime);
+                gain.gain.setValueAtTime(0.2, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.1);
+            },
+            go: () => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.frequency.setValueAtTime(800, audioContext.currentTime);
+                gain.gain.setValueAtTime(0.25, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.15);
+            }
+        };
+
+        // === BACKGROUND MUSIC ===
+        const BGM = new Audio();
+        BGM.loop = true;
+        BGM.volume = 0.1; // 40% volume
+
+        // 🎵 CHANGE SONG HERE: Replace with your own mp3 file
+        // Example: BGM.src = '../assets/music/my_song.mp3';
+        BGM.src = '../assets/Upbeat.wav';
+
+        function initAudio() {
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (BGM.src && BGM.paused) {
+                BGM.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+
         // --- GAME STATE ---
         let width, height;
         let gameState = 'MENU'; // MENU, TURN_INTRO, COUNTDOWN, PLAYING, TURN_RESULT, GAME_OVER
@@ -252,7 +359,7 @@
 
         // Physics Objects
         let ball = { x: 0, y: 150, z: -350, vx: 0, vy: 0, vz: 0, state: 'idle', rotation: 0 };
-        let alien = { x: 0, targetX: 0, reactionDelay: 0, movingToTarget: false };
+        let alien = { x: 0, targetX: 0, reactionDelay: 10, movingToTarget: true };
         const perspective = 800;
 
         // Asset Loading
@@ -291,6 +398,7 @@
             currentPlayer = 1;
 
             document.getElementById('mainMenu').classList.add('hidden');
+            initAudio(); // 🔊 Start Audio System
             startTurnIntro();
         }
 
@@ -322,8 +430,10 @@
                 count--;
                 if (count > 0) {
                     countText.textContent = count;
+                    SOUNDS.countdown();  // 🔊 Countdown beep
                 } else if (count === 0) {
                     countText.textContent = "GO!";
+                    SOUNDS.go();  // 🔊 GO sound
                 } else {
                     clearInterval(timer);
                     document.getElementById('countdownScreen').classList.add('hidden');
@@ -453,7 +563,7 @@
             alien.x = 0;
             alien.targetX = 0;
             alien.reactionDelay = difficultySettings.reactionTime; // Reset reaction
-            alien.movingToTarget = false;
+            alien.movingToTarget = true;
         }
 
         function handleInput(clientX, clientY) {
@@ -469,9 +579,10 @@
             ball.vz = minSpeed + (maxSpeed - minSpeed) * ((normalizedY + 1) / 2);
 
             ball.state = 'moving';
+            SOUNDS.kick();  // 🔊 Kick sound
 
             alien.reactionDelay = difficultySettings.reactionTime;
-            alien.movingToTarget = false;
+            alien.movingToTarget = true;
         }
 
         canvas.addEventListener('mousedown', e => handleInput(e.clientX, e.clientY));
@@ -534,8 +645,8 @@
                     alien.x += Math.sign(dx) * Math.min(Math.abs(dx), difficultySettings.alienSpeed);
                 }
             } else {
-                if (Math.abs(alien.x - alien.targetX) < 10) alien.targetX = (Math.random() - 0.5) * 300;
-                alien.x += (alien.targetX - alien.x) * 0.05;
+                if (Math.abs(alien.x - alien.targetX) < 10) alien.targetX = (Math.random() - 0.5) * 1000;
+                alien.x += (alien.targetX - alien.x) * 0.15;  // ⚡ INCREASED from 0.05 to 0.2 for faster idle movement
             }
 
             // Ball Physics
@@ -550,6 +661,7 @@
                         ball.vy *= -GAMEConfig.BALL_BOUNCE_DAMPING; ball.vx *= 0.9;
                         const pb = project(ball.x, ball.y, ball.z);
                         spawnParticles(pb.x, pb.y + 30, 10, '#888', 1);
+                        SOUNDS.bounce();  // 🔊 Bounce sound
                     } else ball.vy = 0;
                 }
 
@@ -566,6 +678,7 @@
                                 // ✅ ALIEN CAUGHT THE BALL - Apply bounce reaction
                                 ball.vx *= -0.8; ball.vz *= -0.5; ball.vy = -8;  // 🏀 BOUNCE: Ball bounces away from alien
                                 ball.state = 'bounced';
+                                SOUNDS.block();  // 🔊 Block sound
                                 spawnPopup(getRandomPhrase(ALIEN_BOUNCE_PHRASES), "#EF4444");
                                 const pb = project(ball.x, ball.y, ball.z);
                                 spawnParticles(pb.x, pb.y, 30, '#FF4444', 3);
@@ -576,6 +689,8 @@
                             // GOAL
                             scores[currentPlayer - 1] += 100;
                             ball.state = 'scored';
+                            ball.state = 'scored';
+                            SOUNDS.goal();  // 🔊 Goal sound
                             spawnPopup("GOAL!", "#22C55E");
                             setTimeout(() => spawnPopup(getRandomPhrase(ALIEN_GOAL_PHRASES), "#FBBF24", 1500), 500);
                             const pb = project(ball.x, ball.y, ball.z);
@@ -589,6 +704,7 @@
                 // Miss
                 if (ball.z > GAMEConfig.GOAL_DEPTH_FAR + 100) {
                     ball.state = 'missed';
+                    SOUNDS.miss();  // 🔊 Miss sound
                     spawnPopup("MISSED!", "#EF4444");
                     setTimeout(() => spawnPopup(getRandomPhrase(ALIEN_MISS_PHRASES), "#FBBF24", 1500), 500);
                     setTimeout(resetBall, 1500);

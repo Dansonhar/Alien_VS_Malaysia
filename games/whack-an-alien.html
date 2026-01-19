@@ -274,6 +274,55 @@
         const ALIEN_TEXTS = ["MAMPOS!", "KENA!", "RASAKAN!", "HIAK!", "BYE!", "PADAN MUKA!"];
         const AUNTIE_TEXTS = ["APA NI?!", "BUTO!", "SAKIT LA!", "OIT!", "BUTA KE?", "LAWA BODO?!"];
 
+        // === BACKGROUND MUSIC ===
+        const BGM = new Audio('../assets/Shooting.mp3');
+        BGM.loop = true;
+        BGM.volume = 0.1;
+
+        function initAudio() {
+            if (BGM.paused) {
+                BGM.play().catch(e => console.log("Audio play failed:", e));
+            }
+        }
+
+        // === SOUND EFFECTS ===
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const SFX = {
+            explode: () => {
+                // 💥 CHANGE EXPLOSION SOUND HERE
+                // To use a file: new Audio('../assets/explode.mp3').play();
+
+                // Generated Boom Sound
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.9);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime); // 🔊 VOLUME: 10 = 100% (Range 0.0 to 1.0)
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.9);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.9);
+            },
+            scream: () => {
+                // 😱 CHANGE SCREAM SOUND HERE
+                // To use a file: new Audio('../assets/scream.mp3').play();
+
+                // Generated Scream Sound (High pitch descent)
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(300, audioCtx.currentTime + 0.9);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.9);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.9);
+            }
+        };
+
         // --- STATE ---
         // --- STATE ---
         let currentMode = 1; // 1 or 2 players
@@ -333,6 +382,7 @@
         function startGame(mode) {
             // Stop any existing game
             isPlaying = false;
+            initAudio(); // 🔊 Start BGM
             clearInterval(gameInterval);
             clearTimeout(peepTimeout);
 
@@ -593,6 +643,7 @@
                 scores[currentPlayer] += ALIEN_POINTS;
                 const text = ALIEN_TEXTS[Math.floor(Math.random() * ALIEN_TEXTS.length)];
                 showFeedback(text, "text-pandan", hole.element);
+                SFX.explode(); // 💥 BOOM!
             } else {
                 const penalty = DIFFICULTY_SETTINGS[currentDifficulty].penalty;
                 scores[currentPlayer] = Math.max(0, scores[currentPlayer] - penalty);
@@ -601,6 +652,7 @@
                 // Shake screen or element
                 gameGrid.classList.add('animate-shake');
                 setTimeout(() => gameGrid.classList.remove('animate-shake'), 300);
+                SFX.scream(); // 😱 SCREAM!
             }
             updateHUD();
         }

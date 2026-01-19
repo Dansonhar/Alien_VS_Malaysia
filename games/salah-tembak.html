@@ -399,6 +399,46 @@
         let mouseX = 0;
         let mouseY = 0;
 
+        // === AUDIO SYSTEM ===
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const BGM = new Audio('../assets/Shooting2.mp3');
+        BGM.loop = true;
+        BGM.volume = 0.1;
+
+        const SFX = {
+            shot: () => { // Pew-Pew (Laser shot)
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.2);
+            },
+            error: () => { // Buzzer/Ouch (Human hit)
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.3);
+            }
+        };
+
+        function initAudio() {
+            if (BGM.paused) BGM.play().catch(e => console.log(e));
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
         // Asset paths
         const ASSETS = {
             // Aliens (randomized)
@@ -1291,6 +1331,7 @@
                 document.getElementById('p2ScoreBox').classList.add('hidden');
                 startCountdown();
             }
+            initAudio(); // 🔊 Start Audio
         }
 
         function showReadyScreen() {
@@ -1577,10 +1618,13 @@
                         for (let i = 0; i < 10; i++) {
                             particles.push(new Particle(target.x, target.y, '#4CAF50'));
                         }
+                        SFX.shot(); // ⚡ Zap
                     } else {
                         // Hit fake target
                         addScore(-5);
                         popups.push(new Popup(target.x, target.y - 50, '-5', '#FF5252'));
+
+                        SFX.error(); // 🚫 Buzzer
 
                         // Reaction based on type
                         if (target.fakeType === 'malaysian') {
