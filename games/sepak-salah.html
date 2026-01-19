@@ -16,33 +16,47 @@
         }
 
         .game-text {
-            text-shadow: 2px 2px 0px #000;
-        }
-
-        /* Pulse Animation for HUD */
-        @keyframes pulse-red {
-            0% {
-                transform: scale(1);
-                color: #FBBF24;
-            }
-
-            50% {
-                transform: scale(1.1);
-                color: #EF4444;
-            }
-
-            100% {
-                transform: scale(1);
-                color: #FBBF24;
-            }
-        }
-
-        .pulse-active {
-            animation: pulse-red 0.5s infinite;
+            text-shadow: 4px 4px 0px #000;
         }
 
         .hidden {
             display: none !important;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out 3;
+        }
+
+        @keyframes pulse-scale {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .animate-pulse-scale {
+            animation: pulse-scale 1s infinite;
         }
     </style>
 </head>
@@ -64,12 +78,12 @@
             </button>
 
             <div class="flex flex-col items-center gap-3">
-                <div class="bg-gray-900/90 rounded-full px-12 py-4 border-[8px] border-yellow-400">
-                    <span id="roundDisplay" class="text-5xl font-bold text-white game-text">ROUND 1/10</span>
+                <div
+                    class="bg-gray-900/90 rounded-full px-12 py-4 border-[8px] border-yellow-400 min-w-[300px] text-center">
+                    <span id="timerDisplay" class="text-6xl font-bold text-white game-text">45s</span>
                 </div>
-                <div id="playerIndicator"
-                    class="hidden bg-purple-600/90 rounded-full px-10 py-3 border-[6px] border-white">
-                    <span id="playerText" class="text-4xl font-bold text-white game-text">PLAYER 1</span>
+                <div id="currentPlayerBadge" class="bg-blue-600/90 rounded-full px-10 py-2 border-[4px] border-white">
+                    <span id="currentPlayerText" class="text-2xl font-bold text-white game-text">PLAYER 1</span>
                 </div>
             </div>
 
@@ -84,139 +98,347 @@
 
     </div>
 
-    <!-- MENUS -->
+    <!-- SCREENS OVERLAY -->
     <div id="menuOverlay" class="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
 
         <!-- MAIN MENU -->
         <div id="mainMenu"
             class="text-center w-full max-w-3xl p-10 bg-white/10 rounded-3xl border-[10px] border-yellow-400 shadow-[0_0_50px_rgba(255,215,0,0.5)]">
             <h1 class="text-8xl font-black text-yellow-400 mb-4 game-text italic">SEPAK SALAH!</h1>
-            <p class="text-3xl text-white mb-10 font-bold">"Kick the ball, not the Malaysian!"</p>
+            <p class="text-3xl text-white mb-10 font-bold">"Kick the ball, not the alien!"</p>
+
+            <!-- DIFFICULTY SELECTOR -->
+            <div class="flex gap-4 mb-8 justify-center">
+                <button id="btnEasy" onclick="setDifficulty('easy')"
+                    class="pointer-events-auto bg-green-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-green-800 hover:scale-105 transition-all opacity-60">EASY</button>
+                <button id="btnNormal" onclick="setDifficulty('normal')"
+                    class="pointer-events-auto bg-yellow-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-yellow-800 hover:scale-105 transition-all border-white shadow-[0_0_20px_white]">NORMAL</button>
+                <button id="btnHard" onclick="setDifficulty('hard')"
+                    class="pointer-events-auto bg-red-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-red-800 hover:scale-105 transition-all opacity-60">HARD</button>
+            </div>
 
             <div class="flex flex-col items-center gap-6 mb-8">
                 <button onclick="startGame(1)"
-                    class="pointer-events-auto bg-green-500 hover:bg-green-600 text-white text-5xl font-bold py-8 px-16 rounded-full border-b-8 border-green-800 active:border-b-0 active:translate-y-2 transition-all w-96">
+                    class="pointer-events-auto bg-green-500 hover:bg-green-600 text-white text-4xl font-bold py-6 px-12 rounded-full border-b-8 border-green-800 active:border-b-0 active:translate-y-2 transition-all w-96">
                     👤 1 PLAYER
                 </button>
                 <button onclick="startGame(2)"
-                    class="pointer-events-auto bg-yellow-500 hover:bg-yellow-600 text-black text-5xl font-bold py-8 px-16 rounded-full border-b-8 border-yellow-800 active:border-b-0 active:translate-y-2 transition-all w-96">
-                    👥 2 PLAYER
+                    class="pointer-events-auto bg-yellow-500 hover:bg-yellow-600 text-white text-4xl font-bold py-6 px-12 rounded-full border-b-8 border-yellow-800 active:border-b-0 active:translate-y-2 transition-all w-96">
+                    👥 2 PLAYERS
                 </button>
             </div>
             <button onclick="window.location.href='../'"
                 class="pointer-events-auto text-gray-400 hover:text-white underline text-xl">Back to Hub</button>
         </div>
 
-        <!-- GAME OVER -->
-        <div id="resultScreen" class="hidden text-center w-full max-w-3xl">
-            <h2 class="text-8xl font-black text-yellow-400 mb-6 game-text">GAME OVER!</h2>
-            <div id="singlePlayerResult" class="hidden mb-8">
-                <p class="text-3xl text-white mb-4">GOALS SCORED</p>
-                <p id="goalsScored" class="text-7xl font-bold text-green-400 game-text mb-2">0/10</p>
-                <p class="text-3xl text-yellow-300">FINAL SCORE</p>
-                <p id="finalScore" class="text-8xl font-bold text-white game-text">0</p>
+        <!-- TURN INTRO SCREEN (Player Ready?) -->
+        <div id="turnScreen" class="hidden text-center w-full max-w-3xl">
+            <h2 id="turnTitle" class="text-8xl font-black text-white mb-10 game-text animate-pulse-scale">PLAYER 1
+                READY?</h2>
+            <button onclick="startCountdown()"
+                class="pointer-events-auto bg-green-500 hover:bg-green-600 text-white text-6xl font-black py-8 px-20 rounded-full border-[8px] border-white shadow-[0_0_40px_rgba(34,197,94,0.6)] hover:scale-110 transition-transform">
+                START!
+            </button>
+        </div>
+
+        <!-- COUNTDOWN SCREEN -->
+        <div id="countdownScreen" class="hidden flex items-center justify-center">
+            <h1 id="countdownText"
+                class="text-[15rem] font-black text-yellow-400 game-text drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">3
+            </h1>
+        </div>
+
+        <!-- TURN RESULT SCREEN -->
+        <div id="turnResultScreen" class="hidden text-center w-full max-w-3xl">
+            <h2 class="text-6xl font-black text-white mb-6 game-text">TIME'S UP!</h2>
+            <div class="bg-blue-900/80 rounded-3xl p-8 border-8 border-white mb-8">
+                <p id="turnPlayerName" class="text-3xl text-yellow-300 font-bold mb-2">PLAYER 1</p>
+                <p class="text-2xl text-white mb-4">SCORE</p>
+                <p id="turnScore" class="text-9xl font-black text-white game-text">1200</p>
             </div>
-            <div id="twoPlayerResult" class="hidden mb-8">
-                <p id="winnerText" class="text-6xl font-bold text-yellow-400 game-text mb-6">PLAYER 1 WINS!</p>
-                <div class="flex justify-center gap-12 mb-4">
-                    <div>
-                        <p class="text-3xl text-red-400 font-bold">PLAYER 1</p>
-                        <p id="p1FinalScore" class="text-7xl font-bold text-white game-text">0</p>
-                    </div>
-                    <div class="text-6xl font-bold text-white">VS</div>
-                    <div>
-                        <p class="text-3xl text-blue-400 font-bold">PLAYER 2</p>
-                        <p id="p2FinalScore" class="text-7xl font-bold text-white game-text">0</p>
-                    </div>
-                </div>
+            <button id="nextTurnBtn" onclick="nextTurn()"
+                class="pointer-events-auto bg-yellow-500 hover:bg-yellow-600 text-white text-4xl font-bold py-6 px-12 rounded-full border-b-8 border-yellow-800 active:border-b-0 active:translate-y-2">
+                NEXT PLAYER ➡️
+            </button>
+        </div>
+
+        <!-- FINAL GAME OVER SCREEN -->
+        <div id="gameOverScreen"
+            class="hidden text-center w-full max-w-4xl bg-white/10 backdrop-blur-md p-10 rounded-3xl border-[8px] border-white">
+            <h2 class="text-8xl font-black text-yellow-400 mb-8 game-text">GAME OVER!</h2>
+
+            <div id="finalScoresContainer" class="flex justify-center gap-10 mb-10">
+                <!-- Scores injected here -->
             </div>
+
+            <h3 id="winnerText" class="text-6xl font-black text-green-400 mb-10 game-text animate-pulse">PLAYER 1 WINS!
+            </h3>
+
             <div class="flex justify-center gap-6">
                 <button onclick="location.reload()"
                     class="pointer-events-auto bg-green-500 hover:bg-green-600 text-white text-4xl font-bold py-6 px-12 rounded-full border-b-8 border-green-800 active:border-b-0 active:translate-y-2">
                     REMATCH 🔄
                 </button>
+                <button onclick="window.location.href='../'"
+                    class="pointer-events-auto bg-gray-600 hover:bg-gray-700 text-white text-4xl font-bold py-6 px-12 rounded-full border-b-8 border-gray-900 active:border-b-0 active:translate-y-2">
+                    EXIT 🚪
+                </button>
             </div>
         </div>
 
-        <!-- Player Turn Screen -->
-        <div id="turnScreen" class="hidden text-center w-full max-w-3xl">
-            <h2 id="turnTitle" class="text-8xl font-black text-yellow-400 mb-8 game-text">PLAYER 2 READY?</h2>
-            <p class="text-4xl text-white mb-4">Get ready to score!</p>
-            <p id="turnScore" class="text-3xl text-gray-300 mb-10">Player 1 Score: 0</p>
-            <button onclick="startPlayerTurn()"
-                class="pointer-events-auto bg-yellow-500 hover:bg-yellow-600 text-black text-5xl font-bold py-8 px-16 rounded-full border-b-8 border-yellow-800 active:border-b-0 active:translate-y-2 transition-all">
-                START 🔥
-            </button>
-        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        // === GAME CONFIGURATION ===
+        const GAMEConfig = {
+            GAME_DURATION: 45, // Seconds per turn
+
+            // Ball Physics
+            BALL_GRAVITY: 0.5,
+            BALL_BOUNCE_DAMPING: 0.65,
+            BALL_MIN_BOUNCE_VY: 2,
+            BALL_SIZE_MIN: 100,
+            BALL_SIZE_MAX: 350,
+
+            // Goal Detection
+            GOAL_LEFT_BOUND: 1800,
+            GOAL_RIGHT_BOUND: 1800,
+            GOAL_DEPTH_NEAR: 1000,
+            GOAL_DEPTH_FAR: 2000,
+
+            // Difficulty Presets
+            DIFFICULTY: {
+                easy: { alienSpeed: 3, reactionTime: 40, catchRadius: 130, predictionAccuracy: 0.6, catchProbability: 0.15 },  // ⚙️ TWEAK: 15% catch chance
+                normal: { alienSpeed: 5, reactionTime: 20, catchRadius: 90, predictionAccuracy: 0.8, catchProbability: 0.40 },  // ⚙️ TWEAK: 40% catch chance
+                hard: { alienSpeed: 8, reactionTime: 8, catchRadius: 60, predictionAccuracy: 0.95, catchProbability: 0.70 }  // ⚙️ TWEAK: 70% catch chance
+            }
+        };
+
         // ASSETS
         const ASSETS = {
             stadium: new Image(),
             goal: new Image(),
             alien: new Image(),
-            malaysian: new Image()
+            ball: new Image()
         };
         ASSETS.stadium.src = '../assets/goal_stadium_bg.jpg';
         ASSETS.goal.src = '../assets/goal_v3.png';
         ASSETS.alien.src = '../assets/alien_purple_v2.png';
-        ASSETS.malaysian.src = '../assets/malaysian_male.png';
-        ASSETS.ball = new Image();
-        ASSETS.ball.src = '../assets/ball.png'; // USER: Replace this file to change ball!
+        ASSETS.ball.src = '../assets/Ball.png';
 
-        // Feedback Phrases
-        const BLOCK_PHRASES = ["TAK KENA! HAHA", "LEMAH!", "TRY HARD!", "DAH AGAK!", "BOLEH BLAH!"];
-        const GOAL_PHRASES = ["NOOB!", "KOSONG!", "TAK NAMPAK KE?", "TIDO KE?", "ADUI!"];
+        // PHRASES
+        const ALIEN_BOUNCE_PHRASES = ["WAH BOUNCE BALIK!", "BALIK SANA!", "TAK BOLEH MASUK!", "LEMAH LA!", "CUBA LAGI!"];
+        const ALIEN_MISS_PHRASES = ["HAHAHA NOOB!", "TEMBAK PON TAK KENA!", "MANA BOLA?", "LARI KE MANA?", "KOSONG!"];
+        const ALIEN_GOAL_PHRASES = ["AIYOOO CAMNE?!", "TAK NAMPAK KE?!", "TIDO KE AKU?!", "ADUH MALU!", "GG WP!"];
 
         function getRandomPhrase(list) {
             return list[Math.floor(Math.random() * list.length)];
         }
 
-        // Helper: Transparent Image Processor
-        // Helper: Transparent Image Processor
-        // Removed: Performed offline to avoid CORS/SecurityError on file:// protocol
-
-
         // --- GAME STATE ---
         let width, height;
-        let gameState = 'MENU'; // MENU, PLAYING, TURN_SWITCH, RESULT
-        let numPlayers = 1;
+        let gameState = 'MENU'; // MENU, TURN_INTRO, COUNTDOWN, PLAYING, TURN_RESULT, GAME_OVER
+        let playerCount = 1;
         let currentPlayer = 1;
-        let currentRound = 1;
-        let maxRounds = 10; // 10 for 1P, 5 for 2P
-        let p1Score = 0;
-        let p2Score = 0;
-        let p1Goals = 0;
-        let p2Goals = 0;
+        let scores = [0, 0]; // P1, P2
+        let timeLeft = 0;
         let particles = [];
         let popups = [];
+        let currentDifficulty = 'normal';
+        let difficultySettings = GAMEConfig.DIFFICULTY.normal;
 
-        // Asset Loading Wrapper
+        // Physics Objects
+        let ball = { x: 0, y: 150, z: -350, vx: 0, vy: 0, vz: 0, state: 'idle', rotation: 0 };
+        let alien = { x: 0, targetX: 0, reactionDelay: 0, movingToTarget: false };
+        const perspective = 800;
+
+        // Asset Loading
         let resourcesLoaded = 0;
         function checkLoad() {
             resourcesLoaded++;
             if (resourcesLoaded === 4) {
-                render();
                 resize();
+                render();
             }
         }
-
         ASSETS.stadium.onload = checkLoad;
         ASSETS.goal.onload = checkLoad;
         ASSETS.alien.onload = checkLoad;
-        ASSETS.malaysian.onload = checkLoad;
+        ASSETS.ball.onload = checkLoad;
 
-        // Physics Objects
-        let ball = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, state: 'idle' }; // idle, moving, scored, missed
-        let keeper = { x: 0, targetX: 0, speed: 0.05, width: 100, type: 'alien' }; // Slower speed logic in update
-        let goalDim = { x: 0, y: 0, w: 0, h: 0, depth: 400 };
+        // --- GAME LOGIC ---
 
-        // Helper
-        const perspective = 800;
+        function setDifficulty(mode) {
+            currentDifficulty = mode;
+            difficultySettings = GAMEConfig.DIFFICULTY[mode];
+
+            ['easy', 'normal', 'hard'].forEach(m => {
+                const btn = document.getElementById(`btn${m.charAt(0).toUpperCase() + m.slice(1)}`);
+                if (m === mode) {
+                    btn.className = btn.className.replace('opacity-60', 'border-white shadow-[0_0_20px_white]');
+                } else {
+                    btn.className = btn.className.replace('border-white shadow-[0_0_20px_white]', '').replace('opacity-60', '') + ' opacity-60';
+                }
+            });
+        }
+
+        function startGame(numPlayers) {
+            playerCount = numPlayers;
+            scores = [0, 0];
+            currentPlayer = 1;
+
+            document.getElementById('mainMenu').classList.add('hidden');
+            startTurnIntro();
+        }
+
+        function startTurnIntro() {
+            gameState = 'TURN_INTRO';
+            document.getElementById('menuOverlay').classList.remove('hidden');
+            document.getElementById('turnScreen').classList.remove('hidden');
+            document.getElementById('turnResultScreen').classList.add('hidden');
+
+            const title = document.getElementById('turnTitle');
+            title.textContent = playerCount === 1 ? "READY?" : `PLAYER ${currentPlayer} READY?`;
+            title.className = `text-8xl font-black mb-10 game-text animate-pulse-scale ${currentPlayer === 1 ? 'text-blue-400' : 'text-red-400'}`;
+
+            // Hide HUD during intro
+            document.getElementById('hud').classList.add('hidden');
+        }
+
+        function startCountdown() {
+            gameState = 'COUNTDOWN';
+            document.getElementById('turnScreen').classList.add('hidden');
+            document.getElementById('countdownScreen').classList.remove('hidden');
+
+            let count = 3;
+            const countText = document.getElementById('countdownText');
+            countText.textContent = count;
+            // Play sound?
+
+            const timer = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countText.textContent = count;
+                } else if (count === 0) {
+                    countText.textContent = "GO!";
+                } else {
+                    clearInterval(timer);
+                    document.getElementById('countdownScreen').classList.add('hidden');
+                    document.getElementById('menuOverlay').classList.add('hidden');
+                    beginGameplay();
+                }
+            }, 1000);
+        }
+
+        function beginGameplay() {
+            gameState = 'PLAYING';
+            timeLeft = GAMEConfig.GAME_DURATION;
+
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('currentPlayerText').textContent = playerCount === 1 ? "SOLO" : `PLAYER ${currentPlayer}`;
+            document.getElementById('currentPlayerBadge').className = `rounded-full px-10 py-2 border-[4px] border-white ${currentPlayer === 1 ? 'bg-blue-600/90' : 'bg-red-600/90'}`;
+
+            resetBall();
+            updateHUD();
+
+            spawnPopup("START!", "#FFF");
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function updateHUD() {
+            document.getElementById('timerDisplay').textContent = Math.ceil(timeLeft) + "s";
+            if (timeLeft <= 10) {
+                document.getElementById('timerDisplay').classList.add('text-red-500');
+            } else {
+                document.getElementById('timerDisplay').classList.remove('text-red-500');
+            }
+            document.getElementById('scoreDisplay').textContent = scores[currentPlayer - 1];
+        }
+
+        function handleTurnEnd() {
+            gameState = 'TURN_RESULT';
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('menuOverlay').classList.remove('hidden');
+            document.getElementById('turnResultScreen').classList.remove('hidden');
+
+            document.getElementById('turnPlayerName').textContent = playerCount === 1 ? "YOU SCORED" : `PLAYER ${currentPlayer}`;
+            document.getElementById('turnScore').textContent = scores[currentPlayer - 1];
+
+            const nextBtn = document.getElementById('nextTurnBtn');
+            if (currentPlayer < playerCount) {
+                nextBtn.textContent = "NEXT PLAYER ➡️";
+                nextBtn.onclick = () => {
+                    currentPlayer++;
+                    startTurnIntro();
+                };
+            } else {
+                nextBtn.textContent = "FINISH 🏁";
+                nextBtn.onclick = endGame;
+            }
+        }
+
+        function endGame() {
+            gameState = 'GAME_OVER';
+            document.getElementById('turnResultScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+
+            const container = document.getElementById('finalScoresContainer');
+            container.innerHTML = '';
+
+            // Render Scores
+            for (let i = 1; i <= playerCount; i++) {
+                const div = document.createElement('div');
+                div.className = "flex flex-col items-center";
+                div.innerHTML = `
+                    <div class="text-3xl font-bold mb-4 ${i === 1 ? 'text-blue-400' : 'text-red-400'}">PLAYER ${i}</div>
+                    <div class="text-6xl font-black text-white game-text bg-white/20 rounded-xl px-8 py-4">${scores[i - 1]}</div>
+                `;
+                container.appendChild(div);
+            }
+
+            // Determine Winner
+            const winnerText = document.getElementById('winnerText');
+            if (playerCount === 1) {
+                winnerText.textContent = "GAME COMPLETED!";
+                winnerText.className = "text-6xl font-black text-white mb-10 game-text";
+            } else {
+                if (scores[0] > scores[1]) {
+                    winnerText.textContent = "PLAYER 1 WINS! 🏆";
+                    winnerText.className = "text-6xl font-black text-blue-400 mb-10 game-text animate-pulse";
+                } else if (scores[1] > scores[0]) {
+                    winnerText.textContent = "PLAYER 2 WINS! 🏆";
+                    winnerText.className = "text-6xl font-black text-red-500 mb-10 game-text animate-pulse";
+                } else {
+                    winnerText.textContent = "IT'S A DRAW! 🤝";
+                    winnerText.className = "text-6xl font-black text-yellow-400 mb-10 game-text";
+                }
+            }
+        }
+
+        function returnToMenu() {
+            gameState = 'MENU';
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('menuOverlay').classList.remove('hidden');
+            document.getElementById('mainMenu').classList.remove('hidden');
+            document.getElementById('turnScreen').classList.add('hidden');
+            document.getElementById('countdownScreen').classList.add('hidden');
+            document.getElementById('turnResultScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+        }
+
+        // --- GAME LOOP & PHYSICS ---
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
         function project(x, y, z) {
             const scale = perspective / (perspective + z);
             return {
@@ -226,441 +448,210 @@
             };
         }
 
-        // --- RESIZE ---
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-
-            // Setup  Goal Dimensions (Fixed Aspect Ratio)
-            const goalScale = Math.min(width * 0.6, height * 0.45);
-            goalDim.w = goalScale;
-            goalDim.h = goalScale * 0.7; // Better aspect for goal_v3.png
-            goalDim.y = height * 0.15; // Position higher for better visibility
+        function resetBall() {
+            ball = { x: 0, y: 150, z: -350, vx: 0, vy: 0, vz: 0, state: 'idle', rotation: 0 };
+            alien.x = 0;
+            alien.targetX = 0;
+            alien.reactionDelay = difficultySettings.reactionTime; // Reset reaction
+            alien.movingToTarget = false;
         }
-        window.addEventListener('resize', resize);
-        resize();
 
-        // --- INPUT (FULL DIRECTIONAL CONTROL - 9 ZONES) ---
         function handleInput(clientX, clientY) {
             if (gameState !== 'PLAYING' || ball.state !== 'idle') return;
 
-            // Normalize click position to -1 to 1 range
-            const normalizedX = (clientX / width - 0.5) * 4;  // -1 (left) to 1 (right)
-            const normalizedY = (clientY / height - 0.5) * 8; // -1 (top) to 1 (bottom)
+            const normalizedX = (clientX / width - 0.5) * 4;
+            const normalizedY = (clientY / height - 0.5) * 8;
 
-            // HORIZONTAL CONTROL (Left/Center/Right)
-            // Determines side direction of ball
-            const horizontalSpeed = 18;
-            ball.vx = normalizedX * horizontalSpeed;
-
-            // VERTICAL CONTROL (High/Middle/Low)
-            // Top of screen = CHIP SHOT (high arc, floaty)
-            // Middle = BALANCED SHOT
-            // Bottom = POWER SHOT (low, fast)
-
-            // Map Y position to arc height
-            // Top clicks (-1) -> High arc (-15 initial vy)
-            // Bottom clicks (1) -> Low arc (-4 initial vy)
-            const minArc = -4;  // Power shot (low)
-            const maxArc = -15; // Chip shot (high)
+            ball.vx = normalizedX * 18;
+            const minArc = -4, maxArc = -15;
             ball.vy = minArc + (maxArc - minArc) * ((1 - normalizedY) / 2);
-
-            // FORWARD SPEED
-            // Higher shots = slower forward (easier to save)
-            // Lower shots = faster forward (harder to save)
-            const minSpeed = 22;  // Chip shot speed
-            const maxSpeed = 35;  // Power shot speed
+            const minSpeed = 22, maxSpeed = 35;
             ball.vz = minSpeed + (maxSpeed - minSpeed) * ((normalizedY + 1) / 2);
 
             ball.state = 'moving';
 
-            // Particle effect at ball
-            const pBall = project(ball.x, ball.y, ball.z);
-            spawnParticles(pBall.x, pBall.y, 20, '#FFF', 2);
-
-            // Show shot type feedback
-            let shotType = '';
-            if (normalizedY < -0.3) shotType = 'CHIP SHOT!';
-            else if (normalizedY > 0.3) shotType = 'POWER SHOT!';
-            else shotType = 'BALANCED!';
-
-            if (Math.abs(normalizedX) < 0.2) shotType += ' CENTER';
-            else if (normalizedX < 0) shotType += ' LEFT';
-            else shotType += ' RIGHT';
-
-            spawnPopup(shotType, '#FFD700');
+            alien.reactionDelay = difficultySettings.reactionTime;
+            alien.movingToTarget = false;
         }
 
-        // Global Event Listener (Interactive Wall)
         canvas.addEventListener('mousedown', e => handleInput(e.clientX, e.clientY));
-        canvas.addEventListener('touchstart', e => {
-            e.preventDefault();
-            handleInput(e.touches[0].clientX, e.touches[0].clientY);
-        });
+        canvas.addEventListener('touchstart', e => { e.preventDefault(); handleInput(e.touches[0].clientX, e.touches[0].clientY); });
 
-        // --- PARTICLES ---
+        // Particles & Popups
         class Particle {
             constructor(x, y, color, speedScale = 1) {
-                this.x = x;
-                this.y = y;
+                this.x = x; this.y = y; this.color = color;
                 this.vx = (Math.random() - 0.5) * 10 * speedScale;
                 this.vy = (Math.random() - 1) * 10 * speedScale;
-                this.life = 1.0;
-                this.color = color;
-                this.size = Math.random() * 5 + 2;
-                this.gravity = 0.5;
+                this.life = 1.0; this.size = Math.random() * 5 + 2; this.gravity = 0.5;
             }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += this.gravity;
-                this.life -= 0.03;
-            }
+            update() { this.x += this.vx; this.y += this.vy; this.vy += this.gravity; this.life -= 0.03; }
             draw(ctx) {
-                ctx.globalAlpha = Math.max(0, this.life);
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
+                ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
             }
         }
-
-        function spawnParticles(x, y, count, color, speed) {
-            for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color, speed));
-        }
-
-        function spawnPopup(text, color) {
-            popups.push({ text, color, life: 1.0, y: height / 2 });
-        }
-
-        // --- LOGIC ---
-        function startGame(players) {
-            numPlayers = players;
-            maxRounds = numPlayers === 1 ? 10 : 5;
-            currentRound = 1;
-            currentPlayer = 1;
-            p1Score = 0;
-            p2Score = 0;
-            p1Goals = 0;
-            p2Goals = 0;
-
-            gameState = 'PLAYING';
-            document.getElementById('menuOverlay').classList.add('hidden');
-            document.getElementById('hud').classList.remove('hidden');
-
-            // Show player indicator for 2P
-            if (numPlayers === 2) {
-                document.getElementById('playerIndicator').classList.remove('hidden');
-                document.getElementById('playerText').textContent = 'PLAYER 1';
-            }
-
-            updateHUD();
-            resetBall();
-            spawnPopup("CLICK LEFT OR RIGHT!", "#FFF");
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function updateHUD() {
-            const roundText = numPlayers === 1
-                ? `ROUND ${currentRound}/${maxRounds}`
-                : `P${currentPlayer}: R${currentRound}/${maxRounds}`;
-            document.getElementById('roundDisplay').textContent = roundText;
-
-            const currentScore = currentPlayer === 1 ? p1Score : p2Score;
-            document.getElementById('scoreDisplay').textContent = currentScore;
-        }
-
-        function returnToMenu() {
-            gameState = 'MENU';
-            document.getElementById('hud').classList.add('hidden');
-            document.getElementById('menuOverlay').classList.remove('hidden');
-            document.getElementById('mainMenu').classList.remove('hidden');
-            document.getElementById('resultScreen').classList.add('hidden');
-            document.getElementById('turnScreen').classList.add('hidden');
-        }
-
-        function startPlayerTurn() {
-            document.getElementById('menuOverlay').classList.add('hidden'); // Fix: Remove dark overlay
-            document.getElementById('turnScreen').classList.add('hidden');
-            document.getElementById('hud').classList.remove('hidden');
-            document.getElementById('playerText').textContent = `PLAYER ${currentPlayer}`;
-            gameState = 'PLAYING';
-            currentRound = 1;
-            updateHUD();
-            resetBall();
-            spawnPopup('YOUR TURN!', '#FFF');
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
-        }
-
-        function resetBall() {
-            ball = { x: 0, y: 150, z: -350, vx: 0, vy: 0, vz: 0, state: 'idle' };
-        }
-
-        function nextRound() {
-            currentRound++;
-
-            // Check if this player finished all rounds
-            if (currentRound > maxRounds) {
-                if (numPlayers === 2 && currentPlayer === 1) {
-                    // Switch to Player 2
-                    currentPlayer = 2;
-                    gameState = 'TURN_SWITCH';
-                    document.getElementById('hud').classList.add('hidden');
-                    document.getElementById('menuOverlay').classList.remove('hidden');
-                    document.getElementById('mainMenu').classList.add('hidden');
-                    document.getElementById('turnScreen').classList.remove('hidden');
-                    document.getElementById('turnTitle').textContent = 'PLAYER 2 READY?';
-                    document.getElementById('turnScore').textContent = `Player 1 Score: ${p1Score} (${p1Goals} goals)`;
-                } else {
-                    // Game over
-                    endGame();
-                }
-            } else {
-                // Next round for same player
-                updateHUD();
-                resetBall();
-                setTimeout(() => {
-                    if (gameState === 'PLAYING') {
-                        spawnPopup(`ROUND ${currentRound}!`, '#FFF');
-                    }
-                }, 500);
-            }
-        }
-
-        function update(dt) {
-            // No timer - rounds-based now!
-
-            // Goalkeeper AI (Reactive)
-            const limit = 400; // movement range
-
-            // AI LOGIC:
-            if (ball.state === 'moving' && ball.z < 300) {
-                // If ball is coming, try to intercept!
-                // Alien tries to match ball X position
-                keeper.targetX = ball.x;
-
-                // Add some human error (random offset) so he's not perfect
-                // keeper.targetX += (Math.random() - 0.5) * 50; 
-
-                // Clamp to limit
-                if (keeper.targetX > limit) keeper.targetX = limit;
-                if (keeper.targetX < -limit) keeper.targetX = -limit;
-
-                // USER: ADJUST ALIEN SPEED HERE (Lower = Slower, Higher = Faster)
-                // Was 0.08, Increased to 0.15 for harder difficulty
-                keeper.x += (keeper.targetX - keeper.x) * 0.15; // Reaction speed
-            } else {
-                // Idle random movement when ball is waiting
-                if (Math.abs(keeper.x - keeper.targetX) < 10) {
-                    if (Math.random() > 0.5) keeper.targetX = 0;
-                    else keeper.targetX = (Math.random() - 0.5) * limit;
-                }
-                keeper.x += (keeper.targetX - keeper.x) * 0.05;
-            }
-
-
-
-            // Ball Physics
-            if (ball.state === 'moving') {
-                ball.x += ball.vx;
-                ball.y += ball.vy;
-                ball.z += ball.vz;
-                ball.vy += 0.5; // Gravity
-
-                // Ground Bounce
-                if (ball.y > 200) { // arbitrary floor plane
-                    ball.y = 200;
-                    ball.vy *= -0.6;
-                    ball.vx *= 0.9;
-                }
-
-                // Goal Check
-                if (ball.z > 300 && ball.z < 350) { // Passing goal line
-                    // Dimensions check
-                    // VISUAL FIX: Widen detection to 290 (Total 580) to match visual goal width of 600
-                    if (Math.abs(ball.x) < 1000 && ball.y < 1000 && ball.y > -1000) {
-
-                        // Keeper Collision (SAVE)
-                        // USER: ADJUST CATCH RADIUS HERE (Larger = Easier for Alien to save)
-                        // Was 90, Increased to 120 for harder difficulty
-                        if (Math.abs(ball.x - keeper.x) < 120) { // Hit Keeper! (Hitbox size)
-                            ball.vx *= -1;
-                            ball.vz *= -0.5;
-                            ball.state = 'missed';
-                            spawnParticles(width / 2 + ball.x, height / 2 + ball.y, 20, '#F00', 3);
-                            spawnPopup(getRandomPhrase(BLOCK_PHRASES), "#EF4444"); // Lawak Bodo text
-                            setTimeout(nextRound, 1500);
-                        } else {
-                            // GOAL!
-                            if (currentPlayer === 1) {
-                                p1Score += 100;
-                                p1Goals++;
-                            } else {
-                                p2Score += 100;
-                                p2Goals++;
-                            }
-                            updateHUD();
-                            ball.state = 'scored';
-                            spawnParticles(width / 2 + ball.x, height / 2 + ball.y, 30, '#FFD700', 4);
-                            spawnPopup(getRandomPhrase(GOAL_PHRASES), "#FBBF24"); // Noob text
-                            setTimeout(nextRound, 1500);
-                        }
-                    } else if (ball.z > 400) {
-                        // Missed completely
-                        ball.state = 'missed';
-                        spawnPopup("MISS!", "#FFF");
-                        setTimeout(nextRound, 1500);
-                    }
-                }
-
-                // Far out bounds
-                if (ball.z > 600) {
-                    ball.state = 'missed';
-                    setTimeout(nextRound, 1000);
-                }
-            }
-
-            // Particles
-            particles.forEach(p => p.update());
-            particles = particles.filter(p => p.life > 0);
-            popups.forEach(p => { p.life -= 0.02; p.y -= 1; });
-            popups = popups.filter(p => p.life > 0);
-        }
-
-        function render() {
-            ctx.clearRect(0, 0, width, height);
-
-            // 1. STADIUM BACKGROUND WITH GOAL
-            if (ASSETS.stadium.complete) {
-                ctx.drawImage(ASSETS.stadium, 0, 0, width, height);
-            } else {
-                ctx.fillStyle = '#111'; ctx.fillRect(0, 0, width, height);
-            }
-
-            // 2. FIELD GRADIENT OVERLAY (subtle, for depth)
-            const horizonY = height * 0.6; // Lower to avoid covering goal
-            const grad = ctx.createLinearGradient(0, horizonY, 0, height);
-            grad.addColorStop(0, 'rgba(15,46,15,0)'); // Transparent at horizon
-            grad.addColorStop(0.5, 'rgba(26,74,26,0.3)');
-            grad.addColorStop(1, 'rgba(46,125,50,0.5)'); // Semi-transparent green close
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.moveTo(0, horizonY);
-            ctx.lineTo(width, horizonY);
-            ctx.lineTo(width, height);
-            ctx.lineTo(0, height);
-            ctx.fill();
-
-            // 3. NO GOAL OVERLAY - using background image instead
-            const goalZ = 350; // Goal line position for collision/rendering
-
-            // 4. KEEPER (Alien) - Moved forward for better visibility
-            const pKeeper = project(keeper.x, 200, goalZ - 60); // Further in front
-            if (ASSETS.alien.complete) {
-                // USER: ADJUST ALIEN SIZE HERE
-                // Increase the '140' for width and '200' for height to make bigger
-                const kw = 500 * pKeeper.scale; // Width (was 140)
-                const kh = 500 * pKeeper.scale; // Height (was 200)
-
-                // Shadow
-                ctx.fillStyle = 'rgba(0,0,0,0.4)';
-                ctx.beginPath();
-                ctx.ellipse(pKeeper.x, pKeeper.y, kw / 2, kw / 5, 0, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.drawImage(ASSETS.alien, pKeeper.x - kw / 2, pKeeper.y - kh, kw, kh);
-            }
-
-            // 5. BALL
-            const pBall = project(ball.x, ball.y, ball.z);
-            const size = 40 * pBall.scale;
-
-            // Ball Shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.3)';
-            ctx.beginPath();
-            // Project shadow on ground (y=200)
-            const pShadow = project(ball.x, 200, ball.z);
-            const sSize = 30 * pShadow.scale;
-            ctx.ellipse(pShadow.x, pShadow.y, sSize, sSize / 2, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Draw Ball (Image with Fallback)
-            if (ASSETS.ball.complete && ASSETS.ball.naturalWidth !== 0) {
-                ctx.drawImage(ASSETS.ball, pBall.x - size, pBall.y - size, size * 2, size * 2);
-            } else {
-                // FALLBACK: White circle if image not found
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(pBall.x, pBall.y, size, 0, Math.PI * 2);
-                ctx.fill();
-                // Shading detail
-                ctx.fillStyle = '#ddd';
-                ctx.beginPath();
-                ctx.arc(pBall.x - size * 0.5, pBall.y - size * 0.5, size * 0.2, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // 6. PARTICLES & POPUPS
-            particles.forEach(p => p.draw(ctx));
-            popups.forEach(p => {
-                ctx.font = "900 80px Fredoka"; // Larger for projection
-                ctx.fillStyle = p.color;
-                ctx.strokeStyle = 'black';
-                ctx.lineWidth = 6;
-                ctx.textAlign = 'center';
-                ctx.globalAlpha = p.life;
-                ctx.strokeText(p.text, width / 2, p.y);
-                ctx.fillText(p.text, width / 2, p.y);
-                ctx.globalAlpha = 1;
-            });
-        }
-
-        function endGame() {
-            gameState = 'RESULT';
-            document.getElementById('hud').classList.add('hidden');
-            document.getElementById('menuOverlay').classList.remove('hidden');
-            document.getElementById('mainMenu').classList.add('hidden');
-            document.getElementById('resultScreen').classList.remove('hidden');
-
-            if (numPlayers === 1) {
-                // Single player result
-                document.getElementById('singlePlayerResult').classList.remove('hidden');
-                document.getElementById('twoPlayerResult').classList.add('hidden');
-                document.getElementById('goalsScored').textContent = `${p1Goals}/${maxRounds}`;
-                document.getElementById('finalScore').textContent = p1Score;
-            } else {
-                // Two player result
-                document.getElementById('singlePlayerResult').classList.add('hidden');
-                document.getElementById('twoPlayerResult').classList.remove('hidden');
-                document.getElementById('p1FinalScore').textContent = p1Score;
-                document.getElementById('p2FinalScore').textContent = p2Score;
-
-                if (p1Score > p2Score) {
-                    document.getElementById('winnerText').textContent = 'PLAYER 1 WINS!';
-                } else if (p2Score > p1Score) {
-                    document.getElementById('winnerText').textContent = 'PLAYER 2 WINS!';
-                } else {
-                    document.getElementById('winnerText').textContent = "IT'S A TIE!";
-                }
-            }
+        function spawnParticles(x, y, count, color, speed) { for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color, speed)); }
+        function spawnPopup(text, color, duration = 2000) {
+            const popup = { text, color, life: 1.0, y: height / 2, scale: 0 };
+            popups.push(popup);
+            setTimeout(() => { const idx = popups.indexOf(popup); if (idx > -1) popups.splice(idx, 1); }, duration);
         }
 
         let lastTime = 0;
         function gameLoop(timestamp) {
-            if (gameState !== 'PLAYING') return;
+            if (gameState !== 'PLAYING') return; // Stop loop if not playing
+
             const dt = (timestamp - lastTime) / 1000;
             lastTime = timestamp;
 
-            update(dt);
+            // Timer Logic
+            if (timeLeft > 0) {
+                timeLeft -= dt;
+                if (timeLeft <= 0) {
+                    timeLeft = 0;
+                    handleTurnEnd();
+                    render(); // Render one last frame
+                    return;
+                }
+                updateHUD();
+            }
+
+            // --- UPDATE ---
+            // Alien AI
+            if (ball.state === 'moving') {
+                if (alien.reactionDelay > 0) {
+                    alien.reactionDelay--;
+                } else if (!alien.movingToTarget) {
+                    const accuracy = difficultySettings.predictionAccuracy;
+                    const predictedX = ball.x + ball.vx * (ball.z / ball.vz) * accuracy;
+                    const error = (Math.random() - 0.5) * (100 * (1 - accuracy));
+                    alien.targetX = Math.max(-400, Math.min(400, predictedX + error));
+                    alien.movingToTarget = true;
+                }
+                if (alien.movingToTarget) {
+                    const dx = alien.targetX - alien.x;
+                    alien.x += Math.sign(dx) * Math.min(Math.abs(dx), difficultySettings.alienSpeed);
+                }
+            } else {
+                if (Math.abs(alien.x - alien.targetX) < 10) alien.targetX = (Math.random() - 0.5) * 300;
+                alien.x += (alien.targetX - alien.x) * 0.05;
+            }
+
+            // Ball Physics
+            if (ball.state === 'moving') {
+                ball.x += ball.vx; ball.y += ball.vy; ball.z += ball.vz;
+                ball.vy += GAMEConfig.BALL_GRAVITY; ball.rotation += 0.2;
+
+                // Bounce
+                if (ball.y > 200) {
+                    ball.y = 200;
+                    if (Math.abs(ball.vy) > GAMEConfig.BALL_MIN_BOUNCE_VY) {
+                        ball.vy *= -GAMEConfig.BALL_BOUNCE_DAMPING; ball.vx *= 0.9;
+                        const pb = project(ball.x, ball.y, ball.z);
+                        spawnParticles(pb.x, pb.y + 30, 10, '#888', 1);
+                    } else ball.vy = 0;
+                }
+
+                // Goal Check
+                if (ball.z >= GAMEConfig.GOAL_DEPTH_NEAR && ball.z <= GAMEConfig.GOAL_DEPTH_FAR) {
+                    const inGoalX = Math.abs(ball.x) < GAMEConfig.GOAL_LEFT_BOUND;
+                    const inGoalY = ball.y > -100 && ball.y < 300;
+
+                    if (inGoalX && inGoalY) {
+                        if (Math.abs(ball.x - alien.x) < difficultySettings.catchRadius) {
+                            // 🎲 PROBABILITY CHECK: Roll dice to see if alien catches (TWEAK catchProbability in config)
+                            const catchRoll = Math.random();
+                            if (catchRoll < difficultySettings.catchProbability) {
+                                // ✅ ALIEN CAUGHT THE BALL - Apply bounce reaction
+                                ball.vx *= -0.8; ball.vz *= -0.5; ball.vy = -8;  // 🏀 BOUNCE: Ball bounces away from alien
+                                ball.state = 'bounced';
+                                spawnPopup(getRandomPhrase(ALIEN_BOUNCE_PHRASES), "#EF4444");
+                                const pb = project(ball.x, ball.y, ball.z);
+                                spawnParticles(pb.x, pb.y, 30, '#FF4444', 3);
+                                setTimeout(resetBall, 2000);
+                            }
+                            // ❌ If catchRoll >= catchProbability, alien MISSES - ball continues to goal check below
+                        } else {
+                            // GOAL
+                            scores[currentPlayer - 1] += 100;
+                            ball.state = 'scored';
+                            spawnPopup("GOAL!", "#22C55E");
+                            setTimeout(() => spawnPopup(getRandomPhrase(ALIEN_GOAL_PHRASES), "#FBBF24", 1500), 500);
+                            const pb = project(ball.x, ball.y, ball.z);
+                            spawnParticles(pb.x, pb.y, 40, '#22C55E', 4);
+                            updateHUD();
+                            setTimeout(resetBall, 1000); // Faster reset for timed mode
+                        }
+                    }
+                }
+
+                // Miss
+                if (ball.z > GAMEConfig.GOAL_DEPTH_FAR + 100) {
+                    ball.state = 'missed';
+                    spawnPopup("MISSED!", "#EF4444");
+                    setTimeout(() => spawnPopup(getRandomPhrase(ALIEN_MISS_PHRASES), "#FBBF24", 1500), 500);
+                    setTimeout(resetBall, 1500);
+                }
+            }
+
+            particles.forEach(p => p.update());
+            particles = particles.filter(p => p.life > 0);
+            popups.forEach(p => { p.life -= 0.015; p.y -= 0.5; if (p.scale < 1) p.scale += 0.1; });
+
             render();
             requestAnimationFrame(gameLoop);
         }
 
-        // Initial Render
-        // ASSETS.stadium.onload handled by checkLoad
+        // --- RENDER ---
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw Stadium
+            if (ASSETS.stadium.complete) ctx.drawImage(ASSETS.stadium, 0, 0, width, height);
+            else { ctx.fillStyle = '#111'; ctx.fillRect(0, 0, width, height); }
+
+            // Field
+            const horizonY = height * 0.6;
+            const grad = ctx.createLinearGradient(0, horizonY, 0, height);
+            grad.addColorStop(0, 'rgba(15,46,15,0)'); grad.addColorStop(0.5, 'rgba(26,74,26,0.3)'); grad.addColorStop(1, 'rgba(46,125,50,0.5)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.moveTo(0, horizonY); ctx.lineTo(width, horizonY); ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.fill();
+
+            // Alien
+            const goalZ = 330;
+            const pAlien = project(alien.x, 200, goalZ);
+            if (ASSETS.alien.complete) {
+                const aw = 400 * pAlien.scale; const ah = 400 * pAlien.scale;
+                ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(pAlien.x, pAlien.y, aw / 2, aw / 5, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.drawImage(ASSETS.alien, pAlien.x - aw / 2, pAlien.y - ah, aw, ah);
+            }
+
+            // Ball
+            const pBall = project(ball.x, ball.y, ball.z);
+            const depthFactor = Math.max(0, Math.min(1, (ball.z + 400) / 800));
+            const ballSize = GAMEConfig.BALL_SIZE_MIN + (GAMEConfig.BALL_SIZE_MAX - GAMEConfig.BALL_SIZE_MIN) * (1 - depthFactor);
+
+            ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.beginPath();
+            const pShadow = project(ball.x, 200, ball.z);
+            ctx.ellipse(pShadow.x, pShadow.y, ballSize * 0.7, ballSize * 0.35, 0, 0, Math.PI * 2); ctx.fill();
+
+            ctx.save(); ctx.translate(pBall.x, pBall.y); ctx.rotate(ball.rotation);
+            if (ASSETS.ball.complete && ASSETS.ball.naturalWidth !== 0) ctx.drawImage(ASSETS.ball, -ballSize, -ballSize, ballSize * 2, ballSize * 2);
+            else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(0, 0, ballSize, 0, Math.PI * 2); ctx.fill(); }
+            ctx.restore();
+
+            // Effects
+            particles.forEach(p => p.draw(ctx));
+            popups.forEach((p, i) => {
+                ctx.save(); ctx.globalAlpha = Math.max(0, p.life); ctx.translate(width / 2, p.y - i * 80); ctx.scale(p.scale, p.scale);
+                ctx.fillStyle = p.color; ctx.font = "900 80px Fredoka"; ctx.textAlign = "center"; ctx.shadowColor = "black"; ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 5;
+                ctx.fillText(p.text, 0, 0); ctx.font = "900 80px Fredoka"; ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.strokeText(p.text, 0, 0);
+                ctx.restore();
+            });
+        }
+
+        // Initial set
+        setDifficulty('normal');
     </script>
 </body>
 
