@@ -121,35 +121,32 @@
         class="hidden fixed top-8 left-0 right-0 z-50 px-4 flex flex-col items-center gap-4 pointer-events-none">
 
         <!-- Score & Time (Row 1 - Top) -->
-        <div class="flex gap-3">
+        <div class="flex gap-4 md:gap-6">
             <div
-                class="bg-white/90 px-6 py-3 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl pointer-events-auto">
-                <!-- Increased text size & padding -->
+                class="bg-white/90 px-4 py-2 md:px-8 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-2xl md:text-5xl lg:text-6xl pointer-events-auto">
                 SCORE: <span id="score" class="text-pandan">0</span>
             </div>
             <div
-                class="bg-white/90 px-6 py-3 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl text-sambal pointer-events-auto">
-                <!-- Increased text size & padding -->
+                class="bg-white/90 px-4 py-2 md:px-8 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-2xl md:text-5xl lg:text-6xl text-sambal pointer-events-auto">
                 <span id="timer">30</span>s
             </div>
         </div>
 
         <!-- Player Indicator (Row 2 - Below) -->
         <div id="playerIndicator"
-            class="bg-white/90 px-8 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl pointer-events-auto">
-            <!-- Increased text size -->
+            class="bg-white/90 px-6 py-2 md:px-10 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-xl md:text-4xl lg:text-5xl pointer-events-auto">
             PLAYER 1
         </div>
     </div>
 
     <!-- Persistent Back Button -->
     <button onclick="handleBackButton()"
-        class="fixed bottom-4 left-4 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl border-4 border-black shadow-[4px_4px_0_#000] hover:shadow-[2px_2px_0_#000] hover:translate-y-[2px] transition-all flex items-center gap-2">
-        <span class="text-xl">🏠</span> BACK
+        class="fixed bottom-4 left-4 md:bottom-6 md:left-6 z-[200] bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 md:px-8 md:py-4 rounded-xl md:rounded-2xl border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] hover:shadow-[2px_2px_0_#000] md:hover:shadow-[3px_3px_0_#000] hover:translate-y-[2px] md:hover:translate-y-[3px] transition-all flex items-center gap-2 md:gap-3">
+        <span class="text-2xl md:text-4xl">🏠</span> <span class="text-xl md:text-2xl lg:text-3xl">BACK</span>
     </button>
 
     <!-- Game Area -->
-    <div id="gameContainer" class="w-full h-full flex items-center justify-center pt-24 pb-12 px-4">
+    <div id="gameContainer" class="w-full h-full flex items-center justify-center pt-48 md:pt-64 pb-12 px-4">
         <div id="gameGrid" class="grid-3x3">
             <!-- Holes injected here -->
         </div>
@@ -164,28 +161,29 @@
     <!-- Start Screen -->
     <div id="startScreen"
         class="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1 class="text-4xl md:text-5xl font-bold text-pandan drop-shadow-[0_4px_0_#000] mb-4 animate-float">
+        <h1
+            class="text-5xl md:text-7xl lg:text-9xl font-black text-pandan drop-shadow-[0_4px_0_#000] md:drop-shadow-[0_8px_0_#000] mb-4 md:mb-8 animate-float">
             DESTROY ALIENS,<br>NOT AUNTIES!
         </h1>
-        <p class="text-white text-lg mb-4">Shoot <span class="text-pandan">ALIENS (👽)</span>. <span
-                class="text-pink-400">AUNTIES (👵)</span>!</p>
+        <p class="text-white text-xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-8">Shoot <span
+                class="text-pandan">ALIENS (👽)</span>. <span class="text-pink-400">AUNTIES (👵)</span>!</p>
 
-        <div class="flex flex-col gap-4 w-full max-w-xs">
-            <div class="flex gap-2 justify-center mb-4">
+        <div class="flex flex-col gap-4 md:gap-6 w-full max-w-xs md:max-w-2xl">
+            <div class="flex gap-2 md:gap-4 justify-center mb-4 md:mb-6">
                 <button onclick="setDifficulty('easy')" id="btnEasy"
-                    class="bg-pandan text-black font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60">EASY</button>
+                    class="bg-pandan text-black text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60 hover:scale-105 transition-transform">EASY</button>
                 <button onclick="setDifficulty('normal')" id="btnNormal"
-                    class="bg-durian text-black font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000]">NORMAL</button>
+                    class="bg-durian text-black text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] hover:scale-105 transition-transform">NORMAL</button>
                 <button onclick="setDifficulty('hard')" id="btnHard"
-                    class="bg-sambal text-white font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60">HARD</button>
+                    class="bg-sambal text-white text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60 hover:scale-105 transition-transform">HARD</button>
             </div>
 
             <button onclick="startGame(1)"
-                class="bg-durian text-black font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+                class="bg-durian text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:shadow-[8px_8px_0_#000] md:hover:shadow-[10px_10px_0_#000] hover:-translate-y-1 transition-all">
                 1 PLAYER
             </button>
             <button onclick="startGame(2)"
-                class="bg-cyan-400 text-black font-bold text-xl px-8 py-4 rounded-full border-4 border-black shadow-[6px_6px_0_#000] hover:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+                class="bg-cyan-400 text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:shadow-[8px_8px_0_#000] md:hover:shadow-[10px_10px_0_#000] hover:-translate-y-1 transition-all">
                 2 PLAYERS (VS)
             </button>
         </div>
@@ -211,30 +209,34 @@
     <!-- Game Over / Result Screen -->
     <div id="endScreen"
         class="hidden fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1 class="text-5xl font-bold text-durian drop-shadow-[0_4px_0_#000] mb-8">GAME OVER!</h1>
+        <h1
+            class="text-5xl md:text-7xl lg:text-9xl font-black text-durian drop-shadow-[0_4px_0_#000] md:drop-shadow-[0_8px_0_#000] mb-8 md:mb-12">
+            GAME OVER!</h1>
 
         <!-- Scoreboard -->
-        <div class="bg-white/10 p-8 rounded-2xl border-4 border-white/20 mb-8 backdrop-blur-sm w-full max-w-md">
-            <div class="flex justify-between items-center mb-4 text-2xl font-bold text-white">
+        <div
+            class="bg-white/10 p-6 md:p-10 rounded-2xl md:rounded-3xl border-4 md:border-8 border-white/20 mb-8 md:mb-12 backdrop-blur-sm w-full max-w-md md:max-w-3xl">
+            <div
+                class="flex justify-between items-center mb-4 md:mb-6 text-3xl md:text-5xl lg:text-6xl font-bold text-white">
                 <span>PLAYER 1</span>
                 <span id="p1FinalScore" class="text-pandan">0</span>
             </div>
             <div id="p2ScoreRow"
-                class="hidden flex justify-between items-center text-2xl font-bold text-white border-t-2 border-white/20 pt-4">
+                class="hidden flex justify-between items-center text-3xl md:text-5xl lg:text-6xl font-bold text-white border-t-2 md:border-t-4 border-white/20 pt-4 md:pt-6">
                 <span>PLAYER 2</span>
                 <span id="p2FinalScore" class="text-cyan-400">0</span>
             </div>
         </div>
 
-        <h2 id="winnerText" class="text-3xl font-bold text-white mb-8 animate-float"></h2>
+        <h2 id="winnerText" class="text-6xl font-black text-white mb-12 animate-float"></h2>
 
-        <div class="flex gap-4">
+        <div class="flex gap-4 md:gap-8">
             <button onclick="resetGame()"
-                class="bg-pandan text-black font-bold text-lg px-8 py-3 rounded-full border-4 border-black shadow-[4px_4px_0_#000] hover:-translate-y-1 transition-all">
+                class="bg-pandan text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
                 PLAY AGAIN
             </button>
             <button onclick="handleBackButton()"
-                class="bg-gray-200 text-black font-bold text-lg px-8 py-3 rounded-full border-4 border-black shadow-[4px_4px_0_#000] hover:-translate-y-1 transition-all">
+                class="bg-gray-200 text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
                 MENU
             </button>
         </div>
@@ -494,7 +496,7 @@
             scoreDisplay.innerText = scores[currentPlayer];
             timerDisplay.innerText = timer;
             playerIndicator.innerText = currentMode === 2 ? `PLAYER ${currentPlayer} ` : "SINGLE PLAYER";
-            playerIndicator.className = `bg-white/90 px-8 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] font-bold text-2xl pointer-events-auto ${currentPlayer === 1 ? 'bg-pandan text-black' : 'bg-cyan-400 text-black'}`;
+            playerIndicator.className = `bg-white/90 px-6 py-2 md:px-10 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-xl md:text-4xl lg:text-5xl pointer-events-auto ${currentPlayer === 1 ? 'bg-pandan text-black' : 'bg-cyan-400 text-black'}`;
         }
 
         // --- BACK BUTTON LOGIC ---

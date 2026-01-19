@@ -229,12 +229,13 @@
     <div id="mainMenu"
         class="fixed inset-0 bg-gradient-to-b from-red-800 to-orange-900 flex flex-col items-center justify-center z-[100] text-center px-4">
         <div class="text-8xl mb-4 animate-bounce">🎯</div>
-        <h1 class="text-5xl md:text-7xl font-bold text-sambal drop-shadow-[0_6px_0_#000] mb-2">
+        <h1 class="text-7xl md:text-9xl font-black text-sambal drop-shadow-[0_10px_0_#000] mb-8 tracking-tight">
             SALAH TEMBAK!
         </h1>
-        <p class="text-white text-xl mb-2 max-w-md">"Not everything green is alien.<br>Sometimes it's cactus. Sometimes
+        <p class="text-white text-3xl font-bold mb-4 max-w-4xl leading-relaxed">"Not everything green is
+            alien.<br>Sometimes it's cactus. Sometimes
             it's balloon."</p>
-        <p class="text-red-300 text-lg mb-6">Shoot the REAL aliens!</p>
+        <p class="text-red-300 text-4xl font-black mb-12 animate-pulse">Shoot the REAL aliens!</p>
 
         <!-- Difficulty Selection -->
         <div class="flex gap-2 mb-6">
@@ -247,13 +248,13 @@
         </div>
 
         <button onclick="startGame(1)"
-            class="bg-pandan text-black font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all mb-4 w-72">
+            class="bg-pandan text-black font-bold text-4xl px-16 py-8 rounded-full border-[6px] border-black shadow-[0_12px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all mb-8 w-96 font-black tracking-wider">
             👤 1 PLAYER
         </button>
 
         <button onclick="startGame(2)"
-            class="bg-durian text-black font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#B8860B] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#B8860B] transition-all w-72">
-            👥 2 PLAYER (TURN)
+            class="bg-durian text-black font-bold text-4xl px-16 py-8 rounded-full border-[6px] border-black shadow-[0_12px_0_#B8860B] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#B8860B] transition-all w-96 font-black tracking-wider">
+            👥 2 PLAYERS
         </button>
     </div>
 
@@ -329,10 +330,30 @@
             class="bg-pandan text-black font-bold text-2xl px-12 py-4 rounded-full border-4 border-black shadow-[0_8px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all">
             PLAY AGAIN
         </button>
-        <button onclick="window.location.href='../'"
+        <button onclick="handleBackButton()"
             class="mt-4 bg-gray-600 text-white font-bold px-6 py-2 rounded-full border-2 border-black">
             BACK TO HUB
         </button>
+    </div>
+
+    <!-- QUIT CONFIRMATION MODAL -->
+    <div id="quitModal"
+        class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-[200] backdrop-blur-sm">
+        <div
+            class="bg-white p-8 rounded-3xl border-[8px] border-black shadow-[10px_10px_0_#000] text-center max-w-lg animated-modal">
+            <h2 class="text-5xl font-black text-sambal mb-6">QUIT GAME?</h2>
+            <p class="text-2xl font-bold text-gray-700 mb-8">Balik kampung so soon?</p>
+            <div class="flex gap-6 justify-center">
+                <button onclick="confirmQuit()"
+                    class="bg-red-500 hover:bg-red-600 text-white text-3xl font-bold py-4 px-10 rounded-2xl border-[4px] border-black shadow-[4px_4px_0_#000] hover:translate-y-1 hover:shadow-[2px_2px_0_#000] transition-all">
+                    YES
+                </button>
+                <button onclick="cancelQuit()"
+                    class="bg-gray-300 hover:bg-gray-200 text-black text-3xl font-bold py-4 px-10 rounded-2xl border-[4px] border-black shadow-[4px_4px_0_#000] hover:translate-y-1 hover:shadow-[2px_2px_0_#000] transition-all">
+                    NO
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Back Button -->
@@ -381,21 +402,21 @@
         // Asset paths
         const ASSETS = {
             // Aliens (randomized)
-            alienBlueAnt: '../public/assets/alien_blue_ant.png',
-            alienOrangeTall: '../public/assets/alien_orange_tall.png',
-            alienRedRound: '../public/assets/alien_red_round.png',
-            alienGreenEyes: '../public/assets/green alien with big eyes.png',
+            alienBlueAnt: '../assets/alien_blue_ant.png',
+            alienOrangeTall: '../assets/alien_orange_tall.png',
+            alienRedRound: '../assets/alien_red_round.png',
+            alienGreenEyes: '../assets/green alien with big eyes.png',
 
             // Malaysians (randomized)
-            pakcikSongkok: '../public/assets/pakcik with songkok.png',
-            uncleBatik: '../public/assets/malaysian uncle in batik shirt.png',
-            malaysianFemale: '../public/assets/malaysian_female_v2.png',
+            pakcikSongkok: '../assets/pakcik with songkok.png',
+            uncleBatik: '../assets/malaysian uncle in batik shirt.png',
+            malaysianFemale: '../assets/malaysian_female_v2.png',
 
             // Effects
-            redFlash: '../public/assets/Red_flash.png',
+            redFlash: '../assets/Red_flash.png',
 
-            durian: '../public/assets/durian.png',
-            heroBanner: '../public/assets/hero-banner-final.jpg'
+            durian: '../assets/durian.png',
+            heroBanner: '../assets/hero-banner-final.jpg'
         };
 
         // Preload images
@@ -468,10 +489,18 @@
 
         function handleBackButton() {
             if (gamePhase === 'menu') {
-                if (confirm("Exit to main menu?")) window.location.href = '../index.html';
+                document.getElementById('quitModal').classList.remove('hidden');
             } else {
                 returnToMainMenu();
             }
+        }
+
+        function confirmQuit() {
+            window.location.href = '../index.html';
+        }
+
+        function cancelQuit() {
+            document.getElementById('quitModal').classList.add('hidden');
         }
 
         function returnToMainMenu() {
