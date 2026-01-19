@@ -323,9 +323,9 @@
             document.getElementById('btnHard').className = `bg-red-500 text-white text-2xl font-bold py-3 px-8 rounded-xl border-[4px] border-red-800 hover:scale-105 transition-all ${mode === 'hard' ? 'border-white shadow-[0_0_20px_white]' : 'opacity-60'}`;
 
             // Set Speed Multiplier
-            if (mode === 'easy') alienSpeedMult = 0.7;
-            else if (mode === 'normal') alienSpeedMult = 1.0;
-            else if (mode === 'hard') alienSpeedMult = 1.5;
+            if (mode === 'easy') alienSpeedMult = 0.3;
+            else if (mode === 'normal') alienSpeedMult = 0.5;
+            else if (mode === 'hard') alienSpeedMult = 0.7;
         }
 
         // --- CONSTANTS ---
@@ -350,14 +350,14 @@
                 this.height = 100;
                 // USER: ADJUST ALIEN SPEED HERE (Base speed)
                 // Multiplier (alienSpeedMult) comes from Difficulty (Easy=0.7, Normal=1.0, Hard=1.5)
-                this.speedY = (4 + Math.random() * 8) * alienSpeedMult; // Float up
+                this.speedY = (4 + Math.random() * 2) * alienSpeedMult; // Float up
 
                 this.wobbleOffset = Math.random() * 100;
                 this.wobbleSpeed = 0.05 + Math.random() * 0.05;
                 this.rotation = (Math.random() - 0.5) * 0.2;
 
                 if (type === 'item') {
-                    this.speedY += 3; // Items move faster
+                    this.speedY += 1; // Items move faster
                     // USER: ADJUST UNCLE/AUNTIE SIZE HERE
                     // Was 80, Increase to make them bigger (e.g. 120)
                     this.width = 420;
