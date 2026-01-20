@@ -375,6 +375,8 @@
         const ctx = canvas.getContext('2d');
         let width, height;
 
+        const TARGET_BASE_SIZE = 400; // Global scale reference
+
         function resize() {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
@@ -815,7 +817,7 @@
                 // Malaysian properties
                 this.isMalaysian = this.fakeType === 'malaysian';
                 this.malaysianGender = Math.random() > 0.5 ? 'male' : 'female';
-                this.size = this.isMalaysian ? 400 : 400;
+                this.size = TARGET_BASE_SIZE; // Standardized size for all targets
 
                 // Randomize alien variant (for real aliens)
                 const alienVariants = ['alienBlueAnt', 'alienOrangeTall', 'alienRedRound', 'alienGreenEyes'];
@@ -1154,7 +1156,7 @@
 
                 } else if (this.fakeType === 'cactus') {
                     // Cactus (Scaling based on this.size)
-                    const scale = this.size / 100;
+                    const scale = this.size / 50;
                     ctx.fillStyle = '#4CAF50';
                     ctx.beginPath();
                     ctx.roundRect(-12 * scale, -30 * scale, 24 * scale, 60 * scale, 10 * scale);
@@ -1196,7 +1198,7 @@
 
                 } else if (this.fakeType === 'plant') {
                     // Houseplant (Scaling based on this.size)
-                    const scale = this.size / 100;
+                    const scale = this.size / 50;
                     ctx.fillStyle = '#8D6E63';
                     ctx.beginPath();
                     ctx.moveTo(-20 * scale, 15 * scale);
@@ -1609,12 +1611,22 @@
             for (let target of targets) {
                 if (target.state !== 'active') continue;
 
-                // 🎯 REFINED HIT DETECTION: Switching from large circle to tight rectangle
-                const hitWidth = target.isReal ? target.size * 0.35 : target.size * 0.5; // Narrower for skinny aliens
-                const hitHeight = target.size * 0.8;
+                // 🎯 REFINED HIT DETECTION: Type-specific rectangles
+                let hitWidthMod = 0.5;
+                let hitHeightMod = 0.8;
 
-                const isHit = Math.abs(x - target.x) < (hitWidth / 2) &&
-                    Math.abs(y - target.y) < (hitHeight / 2);
+                if (target.isReal) {
+                    hitWidthMod = 0.6; // Easier to hit aliens
+                } else if (target.fakeType === 'cactus') {
+                    hitWidthMod = 0.3; // Skinny
+                } else if (target.fakeType === 'cardboard') {
+                    hitWidthMod = 0.8; // Wide
+                } else if (target.fakeType === 'balloon') {
+                    hitWidthMod = 0.5;
+                }
+
+                const isHit = Math.abs(x - target.x) < (target.size * hitWidthMod / 2) &&
+                    Math.abs(y - target.y) < (target.size * hitHeightMod / 2);
 
                 if (isHit) {
                     hitSomething = true;
