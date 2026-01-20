@@ -236,32 +236,32 @@
     <!-- Main Menu -->
     <div id="mainMenu"
         class="fixed inset-0 bg-gradient-to-b from-red-800 to-orange-900 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <div class="text-8xl mb-4 animate-bounce">🎯</div>
-        <h1 class="text-7xl md:text-9xl font-black text-sambal drop-shadow-[0_10px_0_#000] mb-8 tracking-tight">
+        <div class="text-6xl mb-4 animate-bounce">🎯</div>
+        <h1 class="text-6xl md:text-8xl font-black text-sambal drop-shadow-[0_10px_0_#000] mb-6 tracking-tight">
             SALAH TEMBAK!
         </h1>
-        <p class="text-white text-3xl font-bold mb-4 max-w-4xl leading-relaxed">"Not everything green is
+        <p class="text-white text-2xl font-bold mb-3 max-w-4xl leading-relaxed">"Not everything green is
             alien.<br>Sometimes it's cactus. Sometimes
             it's balloon."</p>
-        <p class="text-red-300 text-4xl font-black mb-12 animate-pulse">Shoot the REAL aliens!</p>
+        <p class="text-red-300 text-3xl font-black mb-8 animate-pulse">Shoot the REAL aliens!</p>
 
         <!-- Difficulty Selection -->
-        <div class="flex gap-2 mb-6">
+        <div class="flex gap-4 mb-8">
             <button onclick="setDifficulty('easy')" id="btnEasy"
-                class="bg-pandan text-black font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] transition-all">EASY</button>
+                class="bg-pandan text-black font-bold text-3xl px-12 py-5 rounded-2xl border-4 border-black shadow-[4px_4px_0_#000] transition-all">EASY</button>
             <button onclick="setDifficulty('normal')" id="btnNormal"
-                class="bg-durian text-black font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] transition-all opacity-60">NORMAL</button>
+                class="bg-durian text-black font-bold text-3xl px-12 py-5 rounded-2xl border-4 border-black shadow-[4px_4px_0_#000] transition-all opacity-60">NORMAL</button>
             <button onclick="setDifficulty('hard')" id="btnHard"
-                class="bg-sambal text-white font-bold px-4 py-2 rounded-full border-4 border-black shadow-[4px_4px_0_#000] transition-all opacity-60">HARD</button>
+                class="bg-sambal text-white font-bold text-3xl px-12 py-5 rounded-2xl border-4 border-black shadow-[4px_4px_0_#000] transition-all opacity-60">HARD</button>
         </div>
 
         <button onclick="startGame(1)"
-            class="bg-pandan text-black font-bold text-4xl px-16 py-8 rounded-full border-[6px] border-black shadow-[0_12px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all mb-8 w-96 font-black tracking-wider">
+            class="bg-pandan text-black font-bold text-3xl px-12 py-6 rounded-full border-[6px] border-black shadow-[0_10px_0_#2E7D32] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#2E7D32] transition-all mb-6 w-80 font-black tracking-wider">
             👤 1 PLAYER
         </button>
 
         <button onclick="startGame(2)"
-            class="bg-durian text-black font-bold text-4xl px-16 py-8 rounded-full border-[6px] border-black shadow-[0_12px_0_#B8860B] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#B8860B] transition-all w-96 font-black tracking-wider mb-8">
+            class="bg-durian text-black font-bold text-3xl px-12 py-6 rounded-full border-[6px] border-black shadow-[0_10px_0_#B8860B] hover:-translate-y-1 active:translate-y-1 active:shadow-[0_4px_0_#B8860B] transition-all w-80 font-black tracking-wider mb-6">
             👥 2 PLAYERS
         </button>
 
@@ -1156,7 +1156,7 @@
 
                 } else if (this.fakeType === 'cactus') {
                     // Cactus (Scaling based on this.size)
-                    const scale = this.size / 50;
+                    const scale = this.size / 100;
                     ctx.fillStyle = '#4CAF50';
                     ctx.beginPath();
                     ctx.roundRect(-12 * scale, -30 * scale, 24 * scale, 60 * scale, 10 * scale);
@@ -1198,7 +1198,7 @@
 
                 } else if (this.fakeType === 'plant') {
                     // Houseplant (Scaling based on this.size)
-                    const scale = this.size / 50;
+                    const scale = this.size / 100;
                     ctx.fillStyle = '#8D6E63';
                     ctx.beginPath();
                     ctx.moveTo(-20 * scale, 15 * scale);
