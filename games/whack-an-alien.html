@@ -74,7 +74,7 @@
         .grid-3x3 {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 0.5rem;
+            gap: 5rem;
             /* Reduced gap - Closer holes */
             max-width: 800px;
             margin: 0 auto;
@@ -116,142 +116,171 @@
 <body class="font-fredoka min-h-screen overflow-hidden touch-none select-none bg-cover bg-center bg-no-repeat"
     style="background-image: url('../assets/whack_bg.png');">
 
-    <!-- HUD (Centered & Bigger) -->
-    <div id="hud"
-        class="hidden fixed top-8 left-0 right-0 z-50 px-4 flex flex-col items-center gap-4 pointer-events-none">
+    <!-- GAME WRAPPER (Scalable) -->
+    <div id="gameWrapper"
+        style="transform-origin: center; transition: transform 0.2s ease; width: 100%; height: 100vh;">
 
-        <!-- Score & Time (Row 1 - Top) -->
-        <div class="flex gap-4 md:gap-6">
-            <div
-                class="bg-white/90 px-4 py-2 md:px-8 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-2xl md:text-5xl lg:text-6xl pointer-events-auto">
-                SCORE: <span id="score" class="text-pandan">0</span>
+        <!-- HUD (Centered & Bigger) -->
+        <div id="hud"
+            class="hidden fixed top-8 left-0 right-0 z-50 px-4 flex flex-col items-center gap-4 pointer-events-none">
+
+            <!-- Score & Time (Row 1 - Top) -->
+            <div class="flex gap-4 md:gap-6">
+                <div
+                    class="bg-white/90 px-4 py-2 md:px-8 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-2xl md:text-5xl lg:text-6xl pointer-events-auto">
+                    SCORE: <span id="score" class="text-pandan">0</span>
+                </div>
+                <div
+                    class="bg-white/90 px-4 py-2 md:px-8 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-2xl md:text-5xl lg:text-6xl text-sambal pointer-events-auto">
+                    <span id="timer">30</span>s
+                </div>
             </div>
-            <div
-                class="bg-white/90 px-4 py-2 md:px-8 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-2xl md:text-5xl lg:text-6xl text-sambal pointer-events-auto">
-                <span id="timer">30</span>s
+
+            <!-- Player Indicator (Row 2 - Below) -->
+            <div id="playerIndicator"
+                class="bg-white/90 px-6 py-2 md:px-10 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-xl md:text-4xl lg:text-5xl pointer-events-auto">
+                PLAYER 1
+            </div>
+
+        </div>
+
+        <!-- Game Area -->
+        <div id="gameContainer" class="w-full h-full flex items-center justify-center pt-48 md:pt-64 pb-12 px-4">
+            <div id="gameGrid" class="grid-3x3">
+                <!-- Holes injected here -->
             </div>
         </div>
 
-        <!-- Player Indicator (Row 2 - Below) -->
-        <div id="playerIndicator"
-            class="bg-white/90 px-6 py-2 md:px-10 md:py-4 rounded-full border-4 md:border-[6px] border-black shadow-[4px_4px_0_#000] md:shadow-[6px_6px_0_#000] font-black text-xl md:text-4xl lg:text-5xl pointer-events-auto">
-            PLAYER 1
+        <!-- Countdown Overlay -->
+        <div id="countdownOverlay"
+            class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[110] pointer-events-none">
+            <div id="countdownText" class="text-9xl font-black text-pandan drop-shadow-[0_8px_0_#000] animate-pop">3
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="startScreen"
+            class="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
+            <h1
+                class="text-5xl md:text-7xl lg:text-9xl font-black text-pandan drop-shadow-[0_4px_0_#000] md:drop-shadow-[0_8px_0_#000] mb-4 md:mb-8 animate-float">
+                DESTROY ALIENS,<br>NOT AUNTIES!
+            </h1>
+            <p class="text-white text-xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-8">Shoot <span
+                    class="text-pandan">ALIENS (👽)</span>. <span class="text-pink-400">AUNTIES (👵)</span>!</p>
+
+            <div class="flex flex-col gap-4 md:gap-6 w-full max-w-xs md:max-w-2xl">
+                <div class="flex gap-2 md:gap-4 justify-center mb-4 md:mb-6">
+                    <button onclick="setDifficulty('easy')" id="btnEasy"
+                        class="bg-pandan text-black text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60 hover:scale-105 transition-transform">EASY</button>
+                    <button onclick="setDifficulty('normal')" id="btnNormal"
+                        class="bg-durian text-black text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] hover:scale-105 transition-transform">NORMAL</button>
+                    <button onclick="setDifficulty('hard')" id="btnHard"
+                        class="bg-sambal text-white text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60 hover:scale-105 transition-transform">HARD</button>
+                </div>
+
+                <button onclick="startGame(1)"
+                    class="bg-durian text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:shadow-[8px_8px_0_#000] md:hover:shadow-[10px_10px_0_#000] hover:-translate-y-1 transition-all">
+                    1 PLAYER
+                </button>
+                <button onclick="startGame(2)"
+                    class="bg-cyan-400 text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:shadow-[8px_8px_0_#000] md:hover:shadow-[10px_10px_0_#000] hover:-translate-y-1 transition-all mb-8">
+                    2 PLAYERS (VS)
+                </button>
+
+                <button onclick="window.location.href='../index.html'"
+                    class="pointer-events-auto bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-2xl border-[8px] border-white shadow-lg text-3xl mt-8 transition-transform hover:scale-105 active:scale-95 mx-auto w-fit">
+                    🏠 BACK TO HUB
+                </button>
+            </div>
+        </div>
+
+        <!-- Turn Transition Screen -->
+        <div id="turnScreen"
+            class="hidden fixed inset-0 bg-gradient-to-b from-purple-900 via-black to-purple-900 flex flex-col items-center justify-center z-[100] text-center px-4">
+            <div class="text-9xl mb-6 animate-bounce">🎯</div>
+            <h2 id="turnTitle"
+                class="text-5xl md:text-7xl font-black text-white drop-shadow-[0_8px_0_#000] mb-6 animate-float">PLAYER
+                1
+                FINISHED!</h2>
+            <div class="bg-white/10 backdrop-blur-sm p-8 rounded-3xl border-4 border-white/30 mb-8">
+                <p class="text-2xl text-white mb-2">Final Score</p>
+                <p id="turnScore" class="text-7xl font-black text-pandan drop-shadow-[0_6px_0_#000]">0</p>
+            </div>
+            <button onclick="startNextTurn()"
+                class="bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold text-2xl px-12 py-5 rounded-full border-4 border-white shadow-[0_8px_0_#0891B2] hover:-translate-y-2 hover:shadow-[0_12px_0_#0891B2] active:translate-y-0 active:shadow-[0_4px_0_#0891B2] transition-all animate-pulse">
+                START PLAYER 2 🔥
+            </button>
+        </div>
+
+        <!-- Game Over / Result Screen -->
+        <div id="endScreen"
+            class="hidden fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[100] text-center px-4">
+            <h1
+                class="text-5xl md:text-7xl lg:text-9xl font-black text-durian drop-shadow-[0_4px_0_#000] md:drop-shadow-[0_8px_0_#000] mb-8 md:mb-12">
+                GAME OVER!</h1>
+
+            <!-- Scoreboard -->
+            <div
+                class="bg-white/10 p-6 md:p-10 rounded-2xl md:rounded-3xl border-4 md:border-8 border-white/20 mb-8 md:mb-12 backdrop-blur-sm w-full max-w-md md:max-w-3xl">
+                <div
+                    class="flex justify-between items-center mb-4 md:mb-6 text-3xl md:text-5xl lg:text-6xl font-bold text-white">
+                    <span>PLAYER 1</span>
+                    <span id="p1FinalScore" class="text-pandan">0</span>
+                </div>
+                <div id="p2ScoreRow"
+                    class="hidden flex justify-between items-center text-3xl md:text-5xl lg:text-6xl font-bold text-white border-t-2 md:border-t-4 border-white/20 pt-4 md:pt-6">
+                    <span>PLAYER 2</span>
+                    <span id="p2FinalScore" class="text-cyan-400">0</span>
+                </div>
+            </div>
+
+            <h2 id="winnerText" class="text-6xl font-black text-white mb-12 animate-float"></h2>
+
+            <div class="flex gap-4 md:gap-8">
+                <button onclick="resetGame()"
+                    class="bg-pandan text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+                    PLAY AGAIN
+                </button>
+                <button onclick="handleBackButton()"
+                    class="bg-gray-200 text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
+                    MENU
+                </button>
+            </div>
+        </div>
+
+        <!-- Hit Effect Text -->
+        <div id="hitEffect" class="hidden fixed inset-0 pointer-events-none z-[150] flex items-center justify-center">
+            <span class="text-6xl font-bold drop-shadow-[0_4px_0_#000] animate-pop"></span>
         </div>
 
     </div>
+    <!-- END GAME WRAPPER -->
 
-    <!-- MENU BUTTON -->
+    <!-- MENU BUTTON (Floating - Outside Wrapper) -->
     <button onclick="handleBackButton()"
         class="fixed bottom-4 left-4 z-[100] pointer-events-auto bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 md:py-4 md:px-10 rounded-2xl border-[4px] md:border-[8px] border-white shadow-lg text-xl md:text-3xl transition-transform hover:scale-105 active:scale-95">
         🏠 MENU
     </button>
 
-
-    <!-- Game Area -->
-    <div id="gameContainer" class="w-full h-full flex items-center justify-center pt-48 md:pt-64 pb-12 px-4">
-        <div id="gameGrid" class="grid-3x3">
-            <!-- Holes injected here -->
+    <!-- SCALE CONTROLS (Floating - Outside Wrapper) -->
+    <div
+        class="fixed bottom-4 right-4 z-[100] pointer-events-auto flex flex-col gap-2 bg-black/70 p-3 rounded-2xl border-4 border-white">
+        <div class="text-white font-bold text-center text-sm md:text-xl mb-1">SCALE: <span id="scaleDisplay">100%</span>
         </div>
-    </div>
-
-    <!-- Countdown Overlay -->
-    <div id="countdownOverlay"
-        class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-[110] pointer-events-none">
-        <div id="countdownText" class="text-9xl font-black text-pandan drop-shadow-[0_8px_0_#000] animate-pop">3</div>
-    </div>
-
-    <!-- Start Screen -->
-    <div id="startScreen"
-        class="fixed inset-0 bg-black/85 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1
-            class="text-5xl md:text-7xl lg:text-9xl font-black text-pandan drop-shadow-[0_4px_0_#000] md:drop-shadow-[0_8px_0_#000] mb-4 md:mb-8 animate-float">
-            DESTROY ALIENS,<br>NOT AUNTIES!
-        </h1>
-        <p class="text-white text-xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-8">Shoot <span
-                class="text-pandan">ALIENS (👽)</span>. <span class="text-pink-400">AUNTIES (👵)</span>!</p>
-
-        <div class="flex flex-col gap-4 md:gap-6 w-full max-w-xs md:max-w-2xl">
-            <div class="flex gap-2 md:gap-4 justify-center mb-4 md:mb-6">
-                <button onclick="setDifficulty('easy')" id="btnEasy"
-                    class="bg-pandan text-black text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60 hover:scale-105 transition-transform">EASY</button>
-                <button onclick="setDifficulty('normal')" id="btnNormal"
-                    class="bg-durian text-black text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] hover:scale-105 transition-transform">NORMAL</button>
-                <button onclick="setDifficulty('hard')" id="btnHard"
-                    class="bg-sambal text-white text-lg md:text-2xl lg:text-3xl font-bold px-4 py-2 md:px-8 md:py-4 rounded-full border-4 border-black shadow-[4px_4px_0_#000] opacity-60 hover:scale-105 transition-transform">HARD</button>
-            </div>
-
-            <button onclick="startGame(1)"
-                class="bg-durian text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:shadow-[8px_8px_0_#000] md:hover:shadow-[10px_10px_0_#000] hover:-translate-y-1 transition-all">
-                1 PLAYER
+        <div class="flex gap-2">
+            <button onclick="adjustScale(-0.1)"
+                class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-xl border-2 border-white text-xl md:text-2xl transition-transform hover:scale-105 active:scale-95">
+                −
             </button>
-            <button onclick="startGame(2)"
-                class="bg-cyan-400 text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:shadow-[8px_8px_0_#000] md:hover:shadow-[10px_10px_0_#000] hover:-translate-y-1 transition-all mb-8">
-                2 PLAYERS (VS)
-            </button>
-
-            <button onclick="window.location.href='../index.html'"
-                class="pointer-events-auto bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-10 rounded-2xl border-[8px] border-white shadow-lg text-3xl mt-8 transition-transform hover:scale-105 active:scale-95 mx-auto w-fit">
-                🏠 BACK TO HUB
+            <button onclick="adjustScale(0.1)"
+                class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 md:py-3 md:px-6 rounded-xl border-2 border-white text-xl md:text-2xl transition-transform hover:scale-105 active:scale-95">
+                +
             </button>
         </div>
-    </div>
-
-    <!-- Turn Transition Screen -->
-    <div id="turnScreen"
-        class="hidden fixed inset-0 bg-gradient-to-b from-purple-900 via-black to-purple-900 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <div class="text-9xl mb-6 animate-bounce">🎯</div>
-        <h2 id="turnTitle"
-            class="text-5xl md:text-7xl font-black text-white drop-shadow-[0_8px_0_#000] mb-6 animate-float">PLAYER 1
-            FINISHED!</h2>
-        <div class="bg-white/10 backdrop-blur-sm p-8 rounded-3xl border-4 border-white/30 mb-8">
-            <p class="text-2xl text-white mb-2">Final Score</p>
-            <p id="turnScore" class="text-7xl font-black text-pandan drop-shadow-[0_6px_0_#000]">0</p>
-        </div>
-        <button onclick="startNextTurn()"
-            class="bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold text-2xl px-12 py-5 rounded-full border-4 border-white shadow-[0_8px_0_#0891B2] hover:-translate-y-2 hover:shadow-[0_12px_0_#0891B2] active:translate-y-0 active:shadow-[0_4px_0_#0891B2] transition-all animate-pulse">
-            START PLAYER 2 🔥
+        <button onclick="resetScale()"
+            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-3 md:py-2 md:px-4 rounded-xl border-2 border-white text-sm md:text-lg transition-transform hover:scale-105 active:scale-95">
+            RESET
         </button>
-    </div>
-
-    <!-- Game Over / Result Screen -->
-    <div id="endScreen"
-        class="hidden fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-[100] text-center px-4">
-        <h1
-            class="text-5xl md:text-7xl lg:text-9xl font-black text-durian drop-shadow-[0_4px_0_#000] md:drop-shadow-[0_8px_0_#000] mb-8 md:mb-12">
-            GAME OVER!</h1>
-
-        <!-- Scoreboard -->
-        <div
-            class="bg-white/10 p-6 md:p-10 rounded-2xl md:rounded-3xl border-4 md:border-8 border-white/20 mb-8 md:mb-12 backdrop-blur-sm w-full max-w-md md:max-w-3xl">
-            <div
-                class="flex justify-between items-center mb-4 md:mb-6 text-3xl md:text-5xl lg:text-6xl font-bold text-white">
-                <span>PLAYER 1</span>
-                <span id="p1FinalScore" class="text-pandan">0</span>
-            </div>
-            <div id="p2ScoreRow"
-                class="hidden flex justify-between items-center text-3xl md:text-5xl lg:text-6xl font-bold text-white border-t-2 md:border-t-4 border-white/20 pt-4 md:pt-6">
-                <span>PLAYER 2</span>
-                <span id="p2FinalScore" class="text-cyan-400">0</span>
-            </div>
-        </div>
-
-        <h2 id="winnerText" class="text-6xl font-black text-white mb-12 animate-float"></h2>
-
-        <div class="flex gap-4 md:gap-8">
-            <button onclick="resetGame()"
-                class="bg-pandan text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
-                PLAY AGAIN
-            </button>
-            <button onclick="handleBackButton()"
-                class="bg-gray-200 text-black font-bold text-2xl md:text-4xl lg:text-5xl px-8 py-4 md:px-12 md:py-6 rounded-full border-[6px] border-black shadow-[6px_6px_0_#000] md:shadow-[8px_8px_0_#000] hover:-translate-y-1 transition-all">
-                MENU
-            </button>
-        </div>
-    </div>
-
-    <!-- Hit Effect Text -->
-    <div id="hitEffect" class="hidden fixed inset-0 pointer-events-none z-[150] flex items-center justify-center">
-        <span class="text-6xl font-bold drop-shadow-[0_4px_0_#000] animate-pop"></span>
     </div>
 
     <script>
@@ -342,8 +371,10 @@
         let isPlaying = false;
         let holes = [];
         let lastHole = -1;
+        let gameScale = 1.0; // Scale factor for game elements
 
         // --- DOM ELEMENTS ---
+        const gameWrapper = document.getElementById('gameWrapper');
         const hud = document.getElementById('hud');
         const startScreen = document.getElementById('startScreen');
         const turnScreen = document.getElementById('turnScreen');
@@ -364,11 +395,11 @@
                 // Increased hole size: w-32 h-32 (small screens), sm:w-48 sm:h-48 (larger screens)
                 hole.className = 'relative w-32 h-32 sm:w-48 sm:h-48 flex justify-center';
                 hole.innerHTML = `
-                    <div class="absolute bottom-[-45px] w-full h-8 bg-amber-900/40 rounded-full blur-sm"></div> <!-- Shadow -->
+                    <div class="absolute bottom-[-55px] w-full h-12 bg-amber-900/40 rounded-full blur-sm"></div> <!-- Shadow -->
                     <!-- Lowered Mound: Changed h-20 to h-14 -->
-                    <div class="absolute bottom-[-50px] w-4/5 h-7 bg-gradient-to-b from-amber-700 to-amber-900 rounded-t-2xl border-4 border-black z-10"></div> <!-- Mound -->
+                    <div class="absolute bottom-[-60px] w-full h-12 bg-gradient-to-b from-amber-700 to-amber-900 rounded-t-2xl border-6 border-black z-10"></div> <!-- Mound -->
                     <!-- Increased character size: w-28 h-28 (small), sm:w-40 sm:h-40 (large) -->
-                    <div class="character absolute bottom-[-30px] w-28 h-28 sm:w-40 sm:h-40 transition-all duration-100 cursor-pointer z-0 translate-y-full opacity-0">
+                    <div class="character absolute bottom-[-35px] w-36 h-36 sm:w-52 sm:h-52 transition-all duration-100 cursor-pointer z-0 translate-y-full opacity-0">
                         <img draggable="false" class="w-full h-full object-contain drop-shadow-md hover:scale-110 transition-transform select-none" src="" alt="Character">
                     </div>
                 `;
@@ -680,8 +711,25 @@
             }, 500);
         }
 
+        // --- SCALE ADJUSTMENT ---
+        function adjustScale(delta) {
+            gameScale = Math.max(0.1, Math.min(2.0, gameScale + delta)); // Limit between 50% and 200%
+            applyScale();
+        }
+
+        function resetScale() {
+            gameScale = 1.0;
+            applyScale();
+        }
+
+        function applyScale() {
+            gameWrapper.style.transform = `scale(${gameScale})`;
+            document.getElementById('scaleDisplay').innerText = Math.round(gameScale * 100) + '%';
+        }
+
         // Init
         initGrid();
+        applyScale(); // Apply initial scale
 
     </script>
 </body>
